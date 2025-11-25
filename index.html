@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voxel Park Tycoon: Neon Nights</title>
+    <title>Voxel Park Tycoon: Day & Night</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Rajdhani:wght@500;700&display=swap');
 
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #1a1a2e; /* Dark Night Sky */
+            background-color: #1a1a2e;
             font-family: 'Rajdhani', sans-serif;
             user-select: none;
             color: white;
+            transition: background-color 1s;
         }
 
         /* --- UI Layers --- */
@@ -31,7 +32,7 @@
 
         /* Top HUD */
         .top-bar {
-            background: rgba(10, 10, 20, 0.9);
+            background: rgba(10, 10, 20, 0.85);
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
@@ -39,7 +40,22 @@
             border-bottom: 2px solid #00d4ff;
             pointer-events: auto;
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+            transition: all 0.5s;
         }
+
+        /* Day Mode UI Override */
+        body.day-mode .top-bar {
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 2px solid #ffaa00;
+            color: #333;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        body.day-mode .stat-value { color: #333; text-shadow: none; }
+        body.day-mode .stat-label { color: #555; }
+        body.day-mode .icon-btn { border-color: #666; color: #333; }
+        body.day-mode .shop-bar { background: rgba(255,255,255,0.9); border-top: 2px solid #ffaa00; }
+        body.day-mode .shop-item { background: #f0f0f0; border-color: #ccc; }
+        body.day-mode .shop-item-name { color: #333; }
 
         .stats-container { display: flex; gap: 30px; align-items: center; }
         .stat-box { display: flex; flex-direction: column; align-items: center; }
@@ -49,11 +65,12 @@
         .stat-value.power { color: #ff00ff; text-shadow: 0 0 10px rgba(255, 0, 255, 0.6); }
         .stat-value.danger { color: #ff3333; animation: blink 1s infinite; }
 
-        /* Happiness Barometer */
         .happiness-box {
             display: flex; flex-direction: column; align-items: center;
             background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 10px; border: 1px solid #444;
         }
+        body.day-mode .happiness-box { background: rgba(255,255,255,0.5); border-color: #aaa; }
+        
         #happy-icon { font-size: 2rem; transition: transform 0.2s; }
         #happy-val { font-size: 0.8rem; font-weight: bold; color: #00ff00; }
 
@@ -70,9 +87,11 @@
             cursor: pointer;
             font-size: 1.2rem;
             transition: all 0.2s;
+            min-width: 40px;
         }
         .icon-btn:hover { background: #00d4ff; color: #000; box-shadow: 0 0 15px #00d4ff; }
         .icon-btn.active { background: #00d4ff; color: #000; box-shadow: 0 0 15px #00d4ff; }
+        .btn-label { font-size: 0.7rem; display: block; text-align: center; }
 
         /* Bottom Shop */
         .shop-bar {
@@ -85,6 +104,7 @@
             overflow-x: auto;
             border-top: 2px solid #ff00ff;
             padding-bottom: 25px;
+            transition: all 0.5s;
         }
 
         .shop-item {
@@ -131,6 +151,10 @@
             transform: translate(-50%, -110%);
             backdrop-filter: blur(10px);
         }
+        body.day-mode #context-menu { background: white; border-color: #ccc; color: #333; }
+        body.day-mode #context-menu h3 { color: #333; }
+        body.day-mode .ctx-stat { color: #666; }
+        body.day-mode .ctx-val { color: #000; }
         
         #context-menu h3 { margin: 0 0 5px 0; font-family: 'Fredoka One', cursive; color: #00d4ff; text-align: center; }
         .ctx-stat { display: flex; justify-content: space-between; font-size: 0.9rem; color: #ccc; margin-bottom: 4px; }
@@ -149,7 +173,6 @@
             transition: all 0.2s;
         }
         .btn-upgrade { background: linear-gradient(45deg, #00d4ff, #0055ff); }
-        .btn-upgrade:hover { box-shadow: 0 0 15px #00d4ff; }
         .btn-fix { background: #ff9900; animation: pulse 1s infinite; }
         .btn-delete { background: #ff3333; margin-top: 5px; }
         .btn-close { background: #444; font-size: 0.8rem; }
@@ -161,6 +184,13 @@
             position: absolute; top: 90px; width: 100%; text-align: center;
             color: #ff3333; font-weight: bold; font-size: 1.2rem; 
             text-shadow: 0 0 10px black; pointer-events: none; opacity: 0; transition: opacity 0.5s;
+        }
+        
+        /* Time Indicator */
+        #time-indicator {
+            position: absolute; bottom: 180px; right: 20px;
+            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 20px;
+            color: white; font-size: 1.2rem; pointer-events: none;
         }
 
         /* Start Overlay */
@@ -206,7 +236,7 @@
 
     <div id="start-overlay">
         <h1>NEO PARK TYCOON</h1>
-        <p class="subtitle">BUILD • POWER • CONNECT • GLOW</p>
+        <p class="subtitle">DAY & NIGHT EDITION</p>
         <button class="start-btn" id="start-btn">IGNITE</button>
     </div>
 
@@ -214,7 +244,7 @@
         <div class="top-bar">
             <div class="stats-container">
                 <div class="stat-box"><span class="stat-label">Credits</span><span class="stat-value money" id="money-display">3,000</span></div>
-                <div class="stat-box"><span class="stat-label">Grid Power</span><span class="stat-value power" id="power-display">0/0</span></div>
+                <div class="stat-box"><span class="stat-label">Power</span><span class="stat-value power" id="power-display">0/0</span></div>
                 <div class="stat-box"><span class="stat-label">Guests</span><span class="stat-value" id="visitor-display">0</span></div>
                 
                 <div class="happiness-box">
@@ -223,21 +253,22 @@
                 </div>
             </div>
             <div class="controls-container">
-                <button class="icon-btn" id="music-btn">🎵</button>
-                <button class="icon-btn" id="pause-btn">⏸️</button>
+                <button class="icon-btn" id="music-btn">🎵<span class="btn-label">Mute</span></button>
+                <button class="icon-btn" id="theme-btn">🎼<span class="btn-label">Theme</span></button>
+                <button class="icon-btn" id="pause-btn">⏸️<span class="btn-label">Pause</span></button>
             </div>
         </div>
 
         <div id="warning-msg">⚠️ Connect attractions to the Entrance!</div>
+        <div id="time-indicator">☀️ 12:00 PM</div>
 
         <div id="context-menu">
             <h3 id="ctx-name">Ride Name</h3>
             <div class="level-stars" id="ctx-stars">★☆☆</div>
-            <div class="ctx-stat"><span>Current Income</span><span class="ctx-val" id="ctx-income">$10/s</span></div>
+            <div class="ctx-stat"><span>Income</span><span class="ctx-val" id="ctx-income">$10/s</span></div>
             <div class="ctx-stat"><span>Connection</span><span class="ctx-val" id="ctx-conn" style="color:#00d4ff">Linked</span></div>
-            <div class="ctx-stat"><span>Status</span><span class="ctx-val" id="ctx-status">Active</span></div>
             
-            <button class="ctx-btn btn-fix" id="ctx-fix-btn" style="display:none;">🔧 Repair System</button>
+            <button class="ctx-btn btn-fix" id="ctx-fix-btn" style="display:none;">🔧 Repair</button>
             <button class="ctx-btn btn-upgrade" id="ctx-upgrade-btn">⬆️ Upgrade ($<span id="ctx-up-cost">100</span>)</button>
             <button class="ctx-btn btn-delete" id="ctx-delete-btn">🗑️ Demolish</button>
             <button class="ctx-btn btn-close" id="ctx-close-btn">Close</button>
@@ -258,13 +289,15 @@
             gridSize: 60,
             tileSize: 2,
             colors: {
-                grass: 0x111116,
-                grid: 0x222233,
+                daySky: 0x87CEEB,
+                nightSky: 0x050510,
+                dayGround: 0x4caf50,
+                nightGround: 0x111116,
                 path: 0x333344,
                 dim: 0x333333,
-                selectGood: 0x00ff00,
-                selectBad: 0xff0000
-            }
+            },
+            // 5 minutes = 300 seconds per phase
+            dayLength: 300
         };
 
         const STATE = {
@@ -279,27 +312,27 @@
             isPlaying: false,
             isPaused: false,
             audioEnabled: true,
-            frameCount: 0
+            gameTime: 0, // 0 to 600 (0-300 day, 300-600 night)
+            isNight: false,
+            currentTheme: 0
         };
 
         const BLUEPRINTS = [
-            { id: 'path', name: 'Neon Road', cost: 10, power: 0, icon: '🛣️', type: 'path', size: 1, cat: 'infra' },
-            { id: 'solar', name: 'Fusion Core', cost: 200, power: 50, icon: '🔋', type: 'utility', size: 1, cat: 'power' },
-            { id: 'parking', name: 'Parking Lot', cost: 500, power: -5, icon: '🚗', type: 'transport', size: 2, cat: 'trans', cap: 15 },
-            { id: 'bus', name: 'Bus Station', cost: 800, power: -10, icon: '🚌', type: 'transport', size: 2, cat: 'trans', cap: 25 },
-            
-            { id: 'burger', name: 'Cyber Burger', cost: 400, income: 20, power: -5, icon: '🍔', type: 'shop', size: 1, cat: 'biz' },
-            { id: 'arcade', name: 'VR Arcade', cost: 800, income: 45, power: -15, icon: '🕹️', type: 'shop', size: 1, cat: 'biz' },
-            
-            { id: 'spinner', name: 'Grav-Spinner', cost: 1500, income: 100, power: -30, icon: '🛸', type: 'ride', size: 2, cat: 'ride' },
-            { id: 'drop', name: 'Void Drop', cost: 3000, income: 250, power: -50, icon: '🗼', type: 'ride', size: 1, cat: 'ride' },
-            { id: 'coaster', name: 'Photon Coaster', cost: 6000, income: 500, power: -100, icon: '🎢', type: 'ride', size: 3, cat: 'ride' }
+            { id: 'path', name: 'Road', cost: 10, power: 0, icon: '🛣️', type: 'path', size: 1, cat: 'infra' },
+            { id: 'solar', name: 'Solar', cost: 200, power: 50, icon: '🔋', type: 'utility', size: 1, cat: 'power' },
+            { id: 'parking', name: 'Parking', cost: 500, power: -5, icon: '🚗', type: 'transport', size: 2, cat: 'trans', cap: 15 },
+            { id: 'bus', name: 'Bus Stn', cost: 800, power: -10, icon: '🚌', type: 'transport', size: 2, cat: 'trans', cap: 25 },
+            { id: 'burger', name: 'Burger', cost: 400, income: 20, power: -5, icon: '🍔', type: 'shop', size: 1, cat: 'biz' },
+            { id: 'arcade', name: 'Arcade', cost: 800, income: 45, power: -15, icon: '🕹️', type: 'shop', size: 1, cat: 'biz' },
+            { id: 'spinner', name: 'Spinner', cost: 1500, income: 100, power: -30, icon: '🛸', type: 'ride', size: 2, cat: 'ride' },
+            { id: 'drop', name: 'Drop Tower', cost: 3000, income: 250, power: -50, icon: '🗼', type: 'ride', size: 1, cat: 'ride' },
+            { id: 'coaster', name: 'Coaster', cost: 6000, income: 500, power: -100, icon: '🎢', type: 'ride', size: 3, cat: 'ride' }
         ];
 
         // --- Three.js Init ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050510);
-        scene.fog = new THREE.FogExp2(0x050510, 0.015);
+        scene.background = new THREE.Color(CONFIG.colors.daySky);
+        scene.fog = new THREE.FogExp2(CONFIG.colors.daySky, 0.015);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(40, 50, 40);
@@ -309,7 +342,6 @@
         renderer.toneMapping = THREE.ReinhardToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // Controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.maxPolarAngle = Math.PI / 2 - 0.1;
@@ -320,7 +352,7 @@
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
         bloomPass.threshold = 0;
-        bloomPass.strength = 1.2;
+        bloomPass.strength = 0; // Start off (Day)
         bloomPass.radius = 0.5;
 
         const composer = new EffectComposer(renderer);
@@ -328,24 +360,24 @@
         composer.addPass(bloomPass);
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
         
-        const dirLight = new THREE.DirectionalLight(0xaaccff, 0.5);
+        const dirLight = new THREE.DirectionalLight(0xffffee, 1.0);
         dirLight.position.set(50, 80, 50);
         dirLight.castShadow = true; 
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
         scene.add(dirLight);
 
-        // --- Grid & Ground ---
-        const gridMap = new Map(); // "x,z" -> { building, type }
+        // --- Ground ---
+        const gridMap = new Map();
 
         const groundGeo = new THREE.PlaneGeometry(120, 120);
         const groundMat = new THREE.MeshStandardMaterial({ 
-            color: CONFIG.colors.grass, 
+            color: CONFIG.colors.dayGround, 
             roughness: 0.8,
-            metalness: 0.2
+            metalness: 0.1
         });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
@@ -354,6 +386,7 @@
 
         const gridHelper = new THREE.GridHelper(120, 60, 0x4444ff, 0x222233);
         gridHelper.position.y = 0.05;
+        gridHelper.visible = false; // Hide grid in day mostly, nice touch
         scene.add(gridHelper);
 
         // --- Helpers ---
@@ -367,7 +400,7 @@
             const mat = new THREE.MeshStandardMaterial({ 
                 color: color,
                 emissive: emissive ? color : 0x000000,
-                emissiveIntensity: emissive ? 0.8 : 0,
+                emissiveIntensity: 0, // Controlled by cycle
                 roughness: 0.2,
                 metalness: 0.5
             });
@@ -375,26 +408,88 @@
             mesh.position.set(x, y, z);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
-            mesh.userData = { originalColor: color, originalEmissive: emissive ? color : 0x000000, isNeon: emissive };
+            // Store original data for visual switching
+            mesh.userData = { 
+                originalColor: color, 
+                originalEmissive: emissive ? color : 0x000000, 
+                isNeon: emissive 
+            };
             if (parent) parent.add(mesh);
             return mesh;
         }
 
         // --- Visual System Update ---
+        function updateDayNightCycle(dt) {
+            // Update time (Total cycle 600s: 300s day, 300s night)
+            STATE.gameTime += dt;
+            if(STATE.gameTime >= CONFIG.dayLength * 2) STATE.gameTime = 0;
+
+            const time = STATE.gameTime;
+            const isNight = time > CONFIG.dayLength;
+            STATE.isNight = isNight;
+            
+            // UI Class
+            if(isNight) document.body.classList.remove('day-mode');
+            else document.body.classList.add('day-mode');
+
+            // Indicator
+            const icon = isNight ? "🌙" : "☀️";
+            // Rough hour calc: 0 = 6AM, 150 = 12PM, 300 = 6PM, 450 = 12AM
+            let hour = Math.floor(((time / (CONFIG.dayLength*2)) * 24 + 6) % 24);
+            const ampm = hour >= 12 ? "PM" : "AM";
+            hour = hour % 12 || 12;
+            document.getElementById('time-indicator').innerText = `${icon} ${hour}:00 ${ampm}`;
+
+            // Lerp Factor for transition (approx 10s transition)
+            let t = 0; 
+            const transitionTime = 10;
+            if(time < transitionTime) t = time / transitionTime; // Dawn
+            else if (time > CONFIG.dayLength && time < CONFIG.dayLength + transitionTime) t = (time - CONFIG.dayLength) / transitionTime; // Dusk
+            else t = 1; // Full state
+
+            const cDaySky = new THREE.Color(CONFIG.colors.daySky);
+            const cNightSky = new THREE.Color(CONFIG.colors.nightSky);
+            const cDayG = new THREE.Color(CONFIG.colors.dayGround);
+            const cNightG = new THREE.Color(CONFIG.colors.nightGround);
+
+            if(!isNight) {
+                // Day
+                scene.background.lerpColors(cNightSky, cDaySky, t);
+                scene.fog.color.copy(scene.background);
+                ground.material.color.lerpColors(cNightG, cDayG, t);
+                
+                ambientLight.intensity = 0.2 + 0.6 * t; // Bright day
+                dirLight.intensity = 0.1 + 0.9 * t;
+                bloomPass.strength = 0; // No glow in day
+            } else {
+                // Night
+                scene.background.lerpColors(cDaySky, cNightSky, t);
+                scene.fog.color.copy(scene.background);
+                ground.material.color.lerpColors(cDayG, cNightG, t);
+                
+                ambientLight.intensity = 0.8 - 0.6 * t; // Dim night
+                dirLight.intensity = 1.0 - 0.9 * t;
+                bloomPass.strength = 1.2 * t; // Glow fades in
+            }
+        }
+
         function updateBuildingVisuals(building, isConnected, hasPower) {
             const active = isConnected && hasPower && !building.broken;
+            
             building.mesh.traverse(child => {
                 if (child.isMesh && child.userData) {
-                    // If it was meant to be neon, turn it on/off
-                    if(child.userData.isNeon) {
-                        child.material.emissive.setHex(active ? child.userData.originalEmissive : 0x000000);
-                        child.material.emissiveIntensity = active ? 0.8 : 0;
-                    }
-                    // Base colors also dim if inactive (optional, keeping simple for now)
-                    if(!active && !child.userData.isNeon) {
-                         child.material.color.setHex(CONFIG.colors.dim);
-                    } else if(active && !child.userData.isNeon) {
-                         child.material.color.setHex(child.userData.originalColor);
+                    if(STATE.isNight) {
+                        // Night Logic: Neon
+                        if(child.userData.isNeon) {
+                            child.material.emissive.setHex(active ? child.userData.originalEmissive : 0x000000);
+                            child.material.emissiveIntensity = active ? 0.8 : 0;
+                        }
+                        if(!active && !child.userData.isNeon) child.material.color.setHex(CONFIG.colors.dim);
+                        else if(active && !child.userData.isNeon) child.material.color.setHex(child.userData.originalColor);
+                    } else {
+                        // Day Logic: Standard Colors, No Emissive
+                        child.material.emissiveIntensity = 0;
+                        child.material.color.setHex(child.userData.originalColor);
                     }
                 }
             });
@@ -431,7 +526,6 @@
                 createBox(0x111111, 3.8, 0.1, 3.8, 0, 0.05, 0, group);
                 createBox(0xffffff, 0.1, 0.11, 3, -0.5, 0.05, 0, group);
                 createBox(0xffffff, 0.1, 0.11, 3, 0.5, 0.05, 0, group);
-                const car1 = createBox(Math.random()*0xffffff, 0.8, 0.5, 1.2, -1, 0.3, 0, group);
                 if(level > 1) createBox(Math.random()*0xffffff, 0.8, 0.5, 1.2, 1, 0.3, 1, group);
             }
             else if (typeId === 'bus') {
@@ -450,7 +544,6 @@
                 rotor.position.y = 1;
                 group.add(rotor);
                 createBox(accent, 0.5, 3, 0.5, 0, 1.5, 0, rotor, true);
-                
                 const arms = level * 2 + 2;
                 for(let i=0; i<arms; i++) {
                     const arm = new THREE.Group();
@@ -506,7 +599,7 @@
             return { mesh: group, anims };
         }
 
-        // --- Logic & Connectivity ---
+        // --- Logic (Path/BFS/Visitor) ---
         function findNearestPath(gridX, gridZ) {
             const dirs = [[0,1], [0,-1], [1,0], [-1,0]];
             for(let d of dirs) {
@@ -516,57 +609,40 @@
             return null;
         }
 
-        // BFS from Entrance
         function updateConnectivity() {
             STATE.buildings.forEach(b => b.isConnected = false);
-            
             const entrance = STATE.buildings.find(b => b.data.type === 'entrance');
             if(!entrance) return;
-
+            entrance.isConnected = true; 
             const queue = [];
             const visited = new Set();
-
-            // Entrance itself is connected
-            entrance.isConnected = true; 
-            
-            // Start BFS from path adjacent to entrance
             const node = findNearestPath(entrance.x, entrance.z);
             if(node) {
                 const key = `${node.x},${node.z}`;
                 visited.add(key);
                 queue.push(node);
             }
-
             while(queue.length > 0) {
                 const curr = queue.shift();
-                
                 const dirs = [[0,CONFIG.tileSize], [0,-CONFIG.tileSize], [CONFIG.tileSize,0], [-CONFIG.tileSize,0]];
-                
                 for(let d of dirs) {
                     const nx = curr.x + d[0];
                     const nz = curr.z + d[1];
                     const k = `${nx},${nz}`;
-                    
                     if(gridMap.has(k)) {
                         const obj = gridMap.get(k);
-                        // Path -> Continue BFS
                         if(obj.type === 'path' && !visited.has(k)) {
                             visited.add(k);
                             queue.push({x: nx, z: nz});
                         }
-                        // Building -> Mark Connected
                         else if (obj.building && !obj.building.isConnected) {
                             obj.building.isConnected = true;
-                            // Note: Transport hubs can propagate too if they are paths logic, but here we just need them to BE connected
                         }
                     }
                 }
             }
-
-            // Warning UI logic
             const disconnected = STATE.buildings.filter(b => (b.data.cat === 'ride' || b.data.cat === 'biz') && !b.isConnected).length > 0;
             document.getElementById('warning-msg').style.opacity = disconnected ? 1 : 0;
-            if(!disconnected) document.getElementById('warning-msg').style.opacity = 0;
         }
 
         function findPath(start, end) {
@@ -598,41 +674,30 @@
             return null;
         }
 
-        // --- Visitor ---
         class Visitor {
             constructor() {
                 this.mesh = new THREE.Group();
                 const color = new THREE.Color().setHSL(Math.random(), 1, 0.6);
                 createBox(color, 0.4, 0.8, 0.4, 0, 0.4, 0, this.mesh, true);
                 createBox(0xffffff, 0.2, 0.2, 0.2, 0, 0.9, 0, this.mesh, true);
-                
-                // Spawn at a connected Transport Hub
                 const hubs = STATE.buildings.filter(b => b.data.cat === 'trans' && b.isConnected);
                 if(hubs.length === 0) { this.valid = false; return; }
-                
                 const spawn = hubs[Math.floor(Math.random()*hubs.length)];
                 this.mesh.position.set(spawn.x, 0, spawn.z);
-                
                 this.state = 'idle';
-                this.targetInfo = null;
                 this.path = [];
                 this.pathIndex = 0;
                 this.spawnPos = {x: spawn.x, z: spawn.z};
-                
                 scene.add(this.mesh);
                 this.valid = true;
                 this.pickDestination();
             }
-
             pickDestination() {
-                // Find connected & working rides
                 const targets = STATE.buildings.filter(b => (b.data.cat === 'ride' || b.data.cat === 'biz') && b.isConnected && !b.broken && STATE.power.current <= STATE.power.max);
-                
                 if(targets.length > 0 && Math.random() < (STATE.happiness/100)) {
                     const t = targets[Math.floor(Math.random()*targets.length)];
                     const roadSpot = findNearestPath(t.x, t.z);
                     const mySpot = findNearestPath(this.mesh.position.x, this.mesh.position.z);
-                    
                     if(roadSpot && mySpot) {
                         const path = findPath(mySpot, roadSpot);
                         if(path) {
@@ -646,7 +711,6 @@
                 }
                 this.state = 'leaving';
             }
-
             update(dt) {
                 if(this.state === 'walking_to' || this.state === 'leaving') {
                     if(this.pathIndex < this.path.length) {
@@ -691,12 +755,10 @@
             const { mesh, anims } = generateBuildingMesh(bp.id, 1);
             mesh.position.set(x, 0, z);
             scene.add(mesh);
-            
             const smoke = new THREE.Group();
             for(let i=0; i<3; i++) createBox(0x333333, 0.5, 0.5, 0.5, (Math.random()-0.5), i+1, (Math.random()-0.5), smoke);
             smoke.visible = false;
             mesh.add(smoke);
-
             const b = {
                 id: Date.now() + Math.random(),
                 data: bp,
@@ -714,10 +776,8 @@
             playAudio('build');
         }
 
-        // Init the Main Entrance
         function initMap() {
              const entranceBP = { id: 'entrance', name: 'Main Gate', cost: 0, power: 0, icon: '⛩️', type: 'entrance', size: 2, cat: 'infra' };
-             // Place slightly offset so it aligns nicely on grid
              placeBuilding(entranceBP, 0, 30);
         }
 
@@ -731,20 +791,18 @@
             b.anims = res.anims;
             b.mesh.position.set(b.x, 0, b.z);
             scene.add(b.mesh);
-            
             const smoke = new THREE.Group();
             for(let i=0; i<3; i++) createBox(0x333333, 0.5, 0.5, 0.5, (Math.random()-0.5), i+1, (Math.random()-0.5), smoke);
             smoke.visible = false;
             b.mesh.add(smoke);
             b.smoke = smoke;
-            
             updateUI();
             updateContextUI();
             playAudio('upgrade');
         }
 
         function removeBuilding(b) {
-            if(b.data.type === 'entrance') return; // Cannot delete main gate
+            if(b.data.type === 'entrance') return;
             scene.remove(b.mesh);
             STATE.buildings = STATE.buildings.filter(x => x !== b);
             gridMap.delete(`${b.x},${b.z}`);
@@ -752,12 +810,10 @@
             playAudio('delete');
         }
 
-        // --- Inputs (Updated with pointer events for reliable click) ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const cursorBox = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), new THREE.MeshBasicMaterial({color: 0x00d4ff, wireframe: true}));
         scene.add(cursorBox);
-
         let isDragging = false;
         let downTime = 0;
 
@@ -765,9 +821,7 @@
             isDragging = true;
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-            
             if(!STATE.selectedBlueprint) { cursorBox.visible = false; return; }
-            
             raycaster.setFromCamera(mouse, camera);
             const hits = raycaster.intersectObject(ground);
             if(hits.length > 0) {
@@ -781,18 +835,12 @@
                 cursorBox.material.color.setHex(occupied ? 0xff0000 : 0x00d4ff);
             }
         });
-
         window.addEventListener('pointerdown', () => { isDragging = false; downTime = Date.now(); });
-
         window.addEventListener('pointerup', e => {
-            const clickDuration = Date.now() - downTime;
-            if (clickDuration > 200 || isDragging) return; // Ignore drag interaction
+            if ((Date.now() - downTime) > 200 || isDragging) return;
             if(e.target.closest('#ui-layer button') || e.target.closest('.shop-item') || e.target.closest('#context-menu')) return;
             if(!STATE.isPlaying) return;
-
             raycaster.setFromCamera(mouse, camera);
-
-            // 1. Select Existing
             const bHits = raycaster.intersectObjects(STATE.buildings.map(b=>b.mesh), true);
             if(bHits.length > 0 && !STATE.selectedBlueprint) {
                 let root = bHits[0].object;
@@ -801,8 +849,6 @@
                 if(b) openContext(b, e.clientX, e.clientY);
                 return;
             }
-
-            // 2. Place New
             if(STATE.selectedBlueprint) {
                 const gHits = raycaster.intersectObject(ground);
                 if(gHits.length > 0) {
@@ -820,24 +866,37 @@
             }
         });
 
-        // --- Audio ---
-        let polySynth;
+        // --- Audio System ---
+        let polySynth, seq;
+        const THEMES = [
+            { name: "Neon", notes: ["C4", "E4", "G4", "B4", "C5", "G4", "E4", "C4"] },
+            { name: "Ode Joy", notes: ["E4", "E4", "F4", "G4", "G4", "F4", "E4", "D4"] },
+            { name: "Mozart", notes: ["G4", "D4", "G4", "D4", "G4", "D4", "G4", "B4"] },
+            { name: "Retro", notes: ["A3", "C4", "E4", "A4", "G4", "E4", "C4", "G3"] },
+            { name: "Happy", notes: ["C4", "C4", "D4", "E4", "D4", "C4", "D4", "E4"] },
+            { name: "Spooky", notes: ["C3", "Eb3", "G3", "C4", "G3", "Eb3", "C3", "G2"] }
+        ];
+
         async function initAudio() {
             await Tone.start();
             polySynth = new Tone.PolySynth(Tone.Synth, {
                 oscillator: { type: "fatsawtooth" },
                 envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 1 }
             }).toDestination();
-            polySynth.volume.value = -15;
+            polySynth.volume.value = -12;
 
-            const loop = new Tone.Loop(time => {
+            updateSequence();
+            Tone.Transport.start();
+        }
+
+        function updateSequence() {
+            if(seq) seq.dispose();
+            const notes = THEMES[STATE.currentTheme].notes;
+            seq = new Tone.Sequence((time, note) => {
                 if(STATE.audioEnabled && STATE.isPlaying && !STATE.isPaused) {
-                    const notes = ["C4", "E4", "G4", "B4", "C5", "G4", "E4", "C4"];
-                    const note = notes[Math.floor(Date.now() / 250) % 8];
                     polySynth.triggerAttackRelease(note, "8n", time);
                 }
-            }, "8n").start(0);
-            Tone.Transport.start();
+            }, notes, "8n").start(0);
         }
 
         function playAudio(key) {
@@ -850,7 +909,7 @@
             if(key === 'error') s.triggerAttackRelease("C3", "32n");
         }
 
-        // --- UI & Game Loop ---
+        // --- UI Functions ---
         function openContext(b, x, y) {
             STATE.selectedBuilding = b;
             const m = document.getElementById('context-menu');
@@ -865,15 +924,14 @@
             const b = STATE.selectedBuilding;
             document.getElementById('ctx-name').innerText = b.data.name;
             document.getElementById('ctx-stars').innerText = "★".repeat(b.level) + "☆".repeat(3-b.level);
-            
             const inc = Math.floor(b.data.income * (1 + (b.level-1)*0.5));
             document.getElementById('ctx-income').innerText = b.data.income ? `$${inc}/s` : 'N/A';
-            document.getElementById('ctx-conn').innerText = b.isConnected ? "Linked" : "Disconnected";
-            document.getElementById('ctx-conn').style.color = b.isConnected ? "#00ff00" : "#ff0000";
+            const connEl = document.getElementById('ctx-conn');
+            connEl.innerText = b.isConnected ? "Linked" : "Disconnected";
+            connEl.style.color = b.isConnected ? "#00ff00" : "#ff0000";
             
             const upBtn = document.getElementById('ctx-upgrade-btn');
             const delBtn = document.getElementById('ctx-delete-btn');
-            
             if(b.data.type === 'entrance') {
                 upBtn.style.display = 'none';
                 delBtn.style.display = 'none';
@@ -885,13 +943,10 @@
                      document.getElementById('ctx-up-cost').innerText = b.level * 100;
                  }
             }
-            
-            const fixBtn = document.getElementById('ctx-fix-btn');
-            fixBtn.style.display = b.broken ? 'block' : 'none';
+            document.getElementById('ctx-fix-btn').style.display = b.broken ? 'block' : 'none';
         }
 
         function closeContext() { document.getElementById('context-menu').style.display = 'none'; STATE.selectedBuilding = null; }
-
         document.getElementById('ctx-close-btn').onclick = closeContext;
         document.getElementById('ctx-delete-btn').onclick = () => { if(STATE.selectedBuilding) removeBuilding(STATE.selectedBuilding); closeContext(); };
         document.getElementById('ctx-upgrade-btn').onclick = () => { if(STATE.selectedBuilding) upgradeBuilding(STATE.selectedBuilding); };
@@ -930,13 +985,10 @@
 
         function updateUI() {
             document.getElementById('money-display').innerText = Math.floor(STATE.money).toLocaleString();
-            document.getElementById('income-display').innerText = `$${Math.floor(STATE.income)}/s`;
             document.getElementById('visitor-display').innerText = STATE.visitors.length;
-            
             const pEl = document.getElementById('power-display');
             pEl.innerText = `${STATE.power.current}/${STATE.power.max}`;
             pEl.className = STATE.power.current > STATE.power.max ? "stat-value danger" : "stat-value power";
-            
             const hEl = document.getElementById('happy-val');
             const hIc = document.getElementById('happy-icon');
             hEl.innerText = Math.floor(STATE.happiness) + "%";
@@ -952,40 +1004,31 @@
             const dt = clock.getDelta();
             
             if(STATE.isPlaying && !STATE.isPaused) {
+                updateDayNightCycle(dt);
                 secTimer += dt;
                 
                 if(secTimer >= 1) {
                     secTimer = 0;
-                    
-                    let pGen = 0, pUse = 0, inc = 0;
-                    let attractionCount = 0;
+                    let pGen = 0, pUse = 0, inc = 0, attractionCount = 0;
                     
                     STATE.buildings.forEach(b => {
-                        // Visual update
-                        updateBuildingVisuals(b, b.isConnected, STATE.power.max >= STATE.power.current || b.data.cat === 'power');
-
+                        // Visual update passed in main loop
                         if(b.data.power > 0) pGen += b.data.power;
                         else pUse += Math.abs(b.data.power);
-                        
                         if(b.data.cat === 'ride' || b.data.cat === 'biz') {
                             attractionCount++;
                             if(!b.broken && Math.random() < 0.01) { b.broken = true; b.smoke.visible = true; playAudio('error'); }
-                            
-                            // Income requires happiness factor
-                            if(b.isConnected && !b.broken && pGen >= pUse) {
-                                inc += (b.data.income * (1 + (b.level-1)*0.5)) * (STATE.happiness / 100);
-                            }
+                            if(b.isConnected && !b.broken && pGen >= pUse) inc += (b.data.income * (1 + (b.level-1)*0.5)) * (STATE.happiness / 100);
                         }
+                        updateBuildingVisuals(b, b.isConnected, (pGen >= pUse) || b.data.cat === 'power');
                     });
                     
-                    // Happiness logic
                     let targetHappiness = 100;
                     if(STATE.visitors.length > 0) {
-                        const ratio = STATE.visitors.length / (Math.max(1, attractionCount) * 5); // 5 visitors per ride ideal
-                        if(ratio > 1) targetHappiness -= (ratio - 1) * 20; // Crowding penalty
+                        const ratio = STATE.visitors.length / (Math.max(1, attractionCount) * 5);
+                        if(ratio > 1) targetHappiness -= (ratio - 1) * 20;
                     }
-                    if(pUse > pGen) targetHappiness -= 30; // Blackout penalty
-                    
+                    if(pUse > pGen) targetHappiness -= 30;
                     STATE.happiness += (targetHappiness - STATE.happiness) * 0.1;
                     STATE.happiness = Math.max(0, Math.min(100, STATE.happiness));
 
@@ -994,26 +1037,20 @@
                     STATE.money += inc;
                     updateUI();
                     
-                    // Spawn if Connected Entrance exists and we have capacity
                     const capacity = STATE.buildings.reduce((acc, b) => acc + (b.data.cap || 0), 0);
                     const entrance = STATE.buildings.find(b => b.data.type === 'entrance');
-                    
-                    // Need Entrance + At least 1 attraction + Power + Road connection
                     if(entrance && attractionCount > 0 && pGen >= pUse && STATE.visitors.length < capacity) {
                         const v = new Visitor();
                         if(v.valid) STATE.visitors.push(v);
                         else v.destroy();
                     }
                 }
-
                 STATE.buildings.forEach(b => {
                    const powered = STATE.power.max >= STATE.power.current;
                    b.anims.forEach(fn => fn(dt, !b.broken && powered && b.isConnected));
                 });
-                
                 STATE.visitors.forEach(v => v.update(dt));
             }
-
             controls.update();
             composer.render();
         }
@@ -1036,12 +1073,25 @@
         
         document.getElementById('pause-btn').onclick = () => {
             STATE.isPaused = !STATE.isPaused;
-            document.getElementById('pause-btn').innerText = STATE.isPaused ? "▶️" : "⏸️";
+            document.getElementById('pause-btn').innerHTML = STATE.isPaused ? "▶️<span class='btn-label'>Play</span>" : "⏸️<span class='btn-label'>Pause</span>";
         };
         
         document.getElementById('music-btn').onclick = () => {
             STATE.audioEnabled = !STATE.audioEnabled;
+            // Actually mute Tone.Destination for global mute
             Tone.Destination.mute = !STATE.audioEnabled;
+            const btn = document.getElementById('music-btn');
+            btn.classList.toggle('active', !STATE.audioEnabled); // Red/Inactive when muted
+            btn.innerHTML = STATE.audioEnabled ? "🎵<span class='btn-label'>Mute</span>" : "🔇<span class='btn-label'>Unmute</span>";
+        };
+
+        document.getElementById('theme-btn').onclick = () => {
+            STATE.currentTheme = (STATE.currentTheme + 1) % THEMES.length;
+            updateSequence();
+            // Optional: flash name of theme
+            const name = THEMES[STATE.currentTheme].name;
+            const btn = document.getElementById('theme-btn');
+            btn.innerHTML = `🎼<span class='btn-label'>${name}</span>`;
         };
 
     </script>
