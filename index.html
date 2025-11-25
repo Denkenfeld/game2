@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voxel Park Tycoon 2.0</title>
+    <title>Voxel Park Tycoon: Neon Nights</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Rajdhani:wght@500;700&display=swap');
 
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB;
-            font-family: 'Roboto', sans-serif;
+            background-color: #1a1a2e; /* Dark Night Sky */
+            font-family: 'Rajdhani', sans-serif;
             user-select: none;
+            color: white;
         }
 
         /* --- UI Layers --- */
@@ -30,70 +31,59 @@
 
         /* Top HUD */
         .top-bar {
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
+            background: rgba(10, 10, 20, 0.85);
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(5px);
+            border-bottom: 2px solid #00d4ff;
             pointer-events: auto;
-            border-bottom: 4px solid rgba(0,0,0,0.2);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
         }
 
-        .stats-container {
-            display: flex;
-            gap: 30px;
-        }
+        .stats-container { display: flex; gap: 30px; }
+        .stat-box { display: flex; flex-direction: column; align-items: center; }
+        .stat-label { font-size: 0.8rem; color: #00d4ff; text-transform: uppercase; letter-spacing: 2px; }
+        .stat-value { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .stat-value.money { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.6); }
+        .stat-value.power { color: #ff00ff; text-shadow: 0 0 10px rgba(255, 0, 255, 0.6); }
+        .stat-value.danger { color: #ff3333; animation: blink 1s infinite; }
 
-        .stat-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        @keyframes blink { 50% { opacity: 0.5; } }
 
-        .stat-label { font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-value { font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: #fff; text-shadow: 2px 2px 0 #000; }
-        .stat-value.money { color: #FFD700; }
-        .stat-value.power { color: #00FFFF; }
-        .stat-value.danger { color: #ff4444; }
-
-        .controls-container {
-            display: flex;
-            gap: 10px;
-        }
-
+        /* Controls */
+        .controls-container { display: flex; gap: 10px; }
         .icon-btn {
-            background: #fff;
-            border: none;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
             border-radius: 8px;
             padding: 8px;
             cursor: pointer;
             font-size: 1.2rem;
-            box-shadow: 0 4px 0 #ccc;
-            transition: transform 0.1s;
+            transition: all 0.2s;
         }
-        .icon-btn:active { transform: translateY(4px); box-shadow: none; }
-        .icon-btn.active { background: #ffd700; color: #000; }
+        .icon-btn:hover { background: #00d4ff; color: #000; box-shadow: 0 0 15px #00d4ff; }
+        .icon-btn.active { background: #00d4ff; color: #000; box-shadow: 0 0 15px #00d4ff; }
 
         /* Bottom Shop */
         .shop-bar {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(10, 10, 20, 0.9);
             padding: 15px;
             display: flex;
             justify-content: center;
             gap: 15px;
             pointer-events: auto;
             overflow-x: auto;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            border-top: 2px solid #ff00ff;
             padding-bottom: 25px;
         }
 
         .shop-item {
             min-width: 90px;
-            height: 110px;
-            background: #f8f9fa;
-            border: 2px solid #ddd;
+            height: 120px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #444;
             border-radius: 12px;
             display: flex;
             flex-direction: column;
@@ -105,100 +95,95 @@
             position: relative;
         }
 
-        .shop-item:hover { transform: translateY(-5px); border-color: #3b82f6; }
-        .shop-item.active { border-color: #10b981; background: #d1fae5; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        .shop-item:hover { transform: translateY(-5px); border-color: #00d4ff; box-shadow: 0 0 15px rgba(0, 212, 255, 0.3); }
+        .shop-item.active { border-color: #ff00ff; background: rgba(255, 0, 255, 0.1); box-shadow: 0 0 20px rgba(255, 0, 255, 0.4); }
+        
         .shop-item-icon { font-size: 2rem; }
-        .shop-item-name { font-weight: bold; font-size: 0.7rem; text-align: center; color: #333; }
-        .shop-item-cost { background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
-        .shop-item-power { position: absolute; top: -5px; right: -5px; background: #00FFFF; color: #000; font-size: 0.6rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; box-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+        .shop-item-name { font-weight: bold; font-size: 0.7rem; text-align: center; color: #eee; }
+        .shop-item-cost { background: #ff00ff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        
+        .shop-category {
+            position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%;
+        }
 
-        /* Context Menu (Upgrade/Fix) */
+        /* Context Menu */
         #context-menu {
             position: absolute;
-            background: white;
+            background: rgba(15, 15, 25, 0.95);
             padding: 15px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-radius: 12px;
+            border: 1px solid #00d4ff;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
             display: none;
             flex-direction: column;
             gap: 10px;
             pointer-events: auto;
-            min-width: 200px;
+            min-width: 220px;
             z-index: 100;
-            transform: translate(-50%, -100%); /* Center above click */
+            transform: translate(-50%, -110%);
+            backdrop-filter: blur(10px);
         }
         
-        #context-menu h3 { margin: 0 0 5px 0; font-family: 'Fredoka One', cursive; color: #333; }
-        #context-menu p { margin: 0; font-size: 0.9rem; color: #666; }
-        
-        .ctx-stat { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+        #context-menu h3 { margin: 0 0 5px 0; font-family: 'Fredoka One', cursive; color: #00d4ff; text-align: center; }
+        .ctx-stat { display: flex; justify-content: space-between; font-size: 0.9rem; color: #ccc; margin-bottom: 4px; }
+        .ctx-val { color: #fff; font-weight: bold; }
         
         .ctx-btn {
-            padding: 8px;
+            padding: 10px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 5px;
-            transition: filter 0.2s;
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
         }
-        .ctx-btn:hover { filter: brightness(1.1); }
-        .btn-upgrade { background: #3b82f6; }
-        .btn-fix { background: #f59e0b; animation: pulse 1s infinite; }
-        .btn-delete { background: #ef4444; margin-top: 5px; }
-        .btn-close { background: #9ca3af; font-size: 0.8rem; padding: 4px;}
+        .btn-upgrade { background: linear-gradient(45deg, #00d4ff, #0055ff); }
+        .btn-upgrade:hover { box-shadow: 0 0 15px #00d4ff; }
+        .btn-fix { background: #ff9900; animation: pulse 1s infinite; }
+        .btn-delete { background: #ff3333; margin-top: 5px; }
+        .btn-close { background: #444; font-size: 0.8rem; }
+        
+        .level-stars { text-align: center; color: #ffd700; margin-bottom: 5px; letter-spacing: 5px; }
 
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        /* Notifications */
+        #warning-msg {
+            position: absolute; top: 80px; width: 100%; text-align: center;
+            color: #ff3333; font-weight: bold; font-size: 1.2rem; 
+            text-shadow: 0 0 10px black; pointer-events: none; opacity: 0; transition: opacity 0.5s;
+        }
 
         /* Start Overlay */
         #start-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(20, 30, 40, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            z-index: 999;
-            pointer-events: auto;
-            backdrop-filter: blur(10px);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(20,30,50,0.95) 0%, rgba(0,0,0,1) 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; z-index: 999; pointer-events: auto;
         }
 
-        h1 { font-family: 'Fredoka One', cursive; font-size: 4rem; margin-bottom: 0px; color: #4ade80; text-shadow: 4px 4px 0 #065f46; letter-spacing: 2px; }
-        p.subtitle { color: #cbd5e1; font-size: 1.2rem; margin-bottom: 40px; }
+        h1 { 
+            font-family: 'Fredoka One', cursive; font-size: 5rem; margin: 0; 
+            background: linear-gradient(to right, #00d4ff, #ff00ff); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(0,212,255,0.5));
+        }
+        p.subtitle { color: #aaa; font-size: 1.3rem; margin-bottom: 40px; letter-spacing: 2px; }
 
         button.start-btn {
-            padding: 20px 60px;
-            font-size: 1.8rem;
-            background: linear-gradient(to bottom, #3b82f6, #2563eb);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-family: 'Fredoka One', cursive;
-            box-shadow: 0 8px 0 #1d4ed8, 0 20px 20px rgba(0,0,0,0.2);
-            transition: transform 0.1s, box-shadow 0.1s;
+            padding: 20px 80px; font-size: 2rem;
+            background: transparent; color: #fff;
+            border: 3px solid #ff00ff; border-radius: 50px;
+            cursor: pointer; font-family: 'Fredoka One', cursive;
+            box-shadow: 0 0 20px #ff00ff, inset 0 0 20px #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            transition: all 0.2s;
         }
-        button.start-btn:active { transform: translateY(8px); box-shadow: 0 0 0 #1d4ed8; }
-
-        #tooltip {
-            position: absolute;
-            background: rgba(0,0,0,0.85);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            pointer-events: none;
-            display: none;
-            font-size: 0.9rem;
-            z-index: 200;
-        }
+        button.start-btn:hover { background: #ff00ff; color: #000; box-shadow: 0 0 40px #ff00ff; }
     </style>
-    <!-- Imports -->
+    
+    <!-- Imports (EffectComposer for Bloom) -->
     <script type="importmap">
         {
             "imports": {
@@ -211,141 +196,170 @@
 </head>
 <body>
 
-    <!-- Start Screen -->
     <div id="start-overlay">
-        <h1>VOXEL PARK 2.0</h1>
-        <p class="subtitle">Build • Manage Power • Repair Rides • Upgrade</p>
-        <button class="start-btn" id="start-btn">OPEN PARK</button>
+        <h1>NEO PARK TYCOON</h1>
+        <p class="subtitle">BUILD • POWER • CONNECT • GLOW</p>
+        <button class="start-btn" id="start-btn">IGNITE</button>
     </div>
 
-    <!-- Game UI -->
     <div id="ui-layer">
         <div class="top-bar">
             <div class="stats-container">
-                <div class="stat-box">
-                    <span class="stat-label">Bank</span>
-                    <span class="stat-value money" id="money-display">$2,000</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-label">Power</span>
-                    <span class="stat-value power" id="power-display">0/0</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-label">Visitors</span>
-                    <span class="stat-value" id="visitor-display">0</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-label">Income</span>
-                    <span class="stat-value" id="income-display">$0/s</span>
-                </div>
+                <div class="stat-box"><span class="stat-label">Credits</span><span class="stat-value money" id="money-display">2,000</span></div>
+                <div class="stat-box"><span class="stat-label">Grid Power</span><span class="stat-value power" id="power-display">0/0</span></div>
+                <div class="stat-box"><span class="stat-label">Guests</span><span class="stat-value" id="visitor-display">0</span></div>
+                <div class="stat-box"><span class="stat-label">Income</span><span class="stat-value" id="income-display">$0/s</span></div>
             </div>
-            
             <div class="controls-container">
-                <button class="icon-btn" id="music-btn" title="Toggle Music">🎵</button>
-                <button class="icon-btn" id="pause-btn" title="Pause Game">⏸️</button>
+                <button class="icon-btn" id="music-btn">🎵</button>
+                <button class="icon-btn" id="pause-btn">⏸️</button>
             </div>
         </div>
 
+        <div id="warning-msg">⚠️ Some attractions are not connected to an Entrance!</div>
+
         <div id="context-menu">
             <h3 id="ctx-name">Ride Name</h3>
-            <div class="ctx-stat"><span>Level:</span> <span id="ctx-level">1</span></div>
-            <div class="ctx-stat"><span>Income:</span> <span id="ctx-income">$10/s</span></div>
-            <div class="ctx-stat"><span>Status:</span> <span id="ctx-status">Running</span></div>
-            <button class="ctx-btn btn-fix" id="ctx-fix-btn" style="display:none;">🔧 Repair ($50)</button>
-            <button class="ctx-btn btn-upgrade" id="ctx-upgrade-btn">⬆️ Upgrade ($100)</button>
+            <div class="level-stars" id="ctx-stars">★☆☆</div>
+            <div class="ctx-stat"><span>Current Income</span><span class="ctx-val" id="ctx-income">$10/s</span></div>
+            <div class="ctx-stat"><span>Connection</span><span class="ctx-val" id="ctx-conn" style="color:#00d4ff">Linked</span></div>
+            <div class="ctx-stat"><span>Status</span><span class="ctx-val" id="ctx-status">Active</span></div>
+            
+            <button class="ctx-btn btn-fix" id="ctx-fix-btn" style="display:none;">🔧 Repair System</button>
+            <button class="ctx-btn btn-upgrade" id="ctx-upgrade-btn">⬆️ Upgrade ($<span id="ctx-up-cost">100</span>)</button>
             <button class="ctx-btn btn-delete" id="ctx-delete-btn">🗑️ Demolish</button>
             <button class="ctx-btn btn-close" id="ctx-close-btn">Close</button>
         </div>
 
         <div class="shop-bar" id="shop-container"></div>
     </div>
-    
-    <div id="tooltip"></div>
 
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-        // --- Configuration & State ---
+        // --- Config ---
         const CONFIG = {
             gridSize: 60,
             tileSize: 2,
             colors: {
-                grass: 0x4caf50,
-                path: 0xA0A0A0,
-                highlight: 0xFFFF00
+                grass: 0x111116,
+                grid: 0x222233,
+                path: 0x333344,
+                pathGlow: 0x00d4ff,
+                selectGood: 0x00ff00,
+                selectBad: 0xff0000
             }
         };
 
         const STATE = {
-            money: 2000,
+            money: 3000,
             power: { current: 0, max: 0 },
-            incomePerSecond: 0,
+            income: 0,
             visitors: [],
-            buildings: [], // { id, mesh, data, x, z, level, health, broken }
+            buildings: [],
             selectedBlueprint: null,
-            selectedBuilding: null, // For context menu
+            selectedBuilding: null,
             isPlaying: false,
             isPaused: false,
-            audioEnabled: true
+            audioEnabled: true,
+            frameCount: 0
         };
 
         const BLUEPRINTS = [
-            { id: 'path', name: 'Street', cost: 10, income: 0, power: 0, icon: '🛣️', type: 'path', size: 1 },
-            { id: 'solar', name: 'Solar Panel', cost: 150, income: 0, power: 30, icon: '⚡', type: 'utility', size: 1, desc: 'Generates Power' },
-            { id: 'burger', name: 'Burger Joint', cost: 300, income: 15, power: -5, icon: '🍔', type: 'shop', size: 1 },
-            { id: 'icecream', name: 'Ice Cream', cost: 450, income: 25, power: -5, icon: '🍦', type: 'shop', size: 1 },
-            { id: 'teacups', name: 'Tea Cups', cost: 1200, income: 60, power: -20, icon: '☕', type: 'ride', size: 2 },
-            { id: 'haunted', name: 'Haunted Manor', cost: 3000, income: 150, power: -40, icon: '👻', type: 'ride', size: 2 },
-            { id: 'coaster', name: 'Roller Coaster', cost: 6000, income: 300, power: -100, icon: '🎢', type: 'ride', size: 3 },
-            { id: 'ferris', name: 'Big Wheel', cost: 4500, income: 220, power: -60, icon: '🎡', type: 'ride', size: 2 },
+            { id: 'path', name: 'Neon Road', cost: 10, power: 0, icon: '🛣️', type: 'path', size: 1, cat: 'infra' },
+            { id: 'solar', name: 'Fusion Core', cost: 200, power: 50, icon: '🔋', type: 'utility', size: 1, cat: 'power' },
+            { id: 'parking', name: 'Parking Lot', cost: 500, power: -5, icon: '🚗', type: 'transport', size: 2, cat: 'trans', cap: 10 },
+            { id: 'bus', name: 'Bus Station', cost: 800, power: -10, icon: '🚌', type: 'transport', size: 2, cat: 'trans', cap: 20 },
+            { id: 'heli', name: 'Helipad', cost: 1500, power: -20, icon: '🚁', type: 'transport', size: 2, cat: 'trans', cap: 30 },
+            
+            { id: 'burger', name: 'Cyber Burger', cost: 400, income: 20, power: -5, icon: '🍔', type: 'shop', size: 1, cat: 'biz' },
+            { id: 'arcade', name: 'VR Arcade', cost: 800, income: 45, power: -15, icon: '🕹️', type: 'shop', size: 1, cat: 'biz' },
+            
+            { id: 'spinner', name: 'Grav-Spinner', cost: 1500, income: 100, power: -30, icon: '🛸', type: 'ride', size: 2, cat: 'ride' },
+            { id: 'drop', name: 'Void Drop', cost: 3000, income: 250, power: -50, icon: '🗼', type: 'ride', size: 1, cat: 'ride' },
+            { id: 'coaster', name: 'Photon Coaster', cost: 6000, income: 500, power: -100, icon: '🎢', type: 'ride', size: 3, cat: 'ride' }
         ];
 
-        // --- Three.js Setup ---
+        // --- Three.js Init ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 30, 120);
+        scene.background = new THREE.Color(0x050510);
+        scene.fog = new THREE.FogExp2(0x050510, 0.015);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(30, 40, 30);
+        camera.position.set(40, 50, 40);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ReinhardToneMapping;
         document.body.appendChild(renderer.domElement);
 
+        // Controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.maxPolarAngle = Math.PI / 2 - 0.1;
-        controls.maxDistance = 100;
-        controls.target.set(0, 0, 0);
+        controls.minDistance = 10;
+        controls.maxDistance = 120;
+
+        // Post Processing (Bloom)
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.2; // GLOW STRENGTH
+        bloomPass.radius = 0.5;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5); // Dark ambient
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-        dirLight.position.set(50, 100, 50);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.set(2048, 2048);
+        
+        const dirLight = new THREE.DirectionalLight(0xaaccff, 0.5);
+        dirLight.position.set(50, 80, 50);
+        dirLight.castShadow = true; 
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
         scene.add(dirLight);
 
-        // --- Game Logic ---
+        // --- Grid & Ground ---
+        const gridMap = new Map(); // "x,z" -> { building, type }
 
-        // Map Helper
-        const occupiedTiles = new Map(); // "x,z" -> buildingObject
+        const groundGeo = new THREE.PlaneGeometry(120, 120);
+        const groundMat = new THREE.MeshStandardMaterial({ 
+            color: CONFIG.colors.grass, 
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
 
-        function getGridPos(point) {
-            const x = Math.floor(point.x / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
-            const z = Math.floor(point.z / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
-            return { x, z, key: `${x},${z}` };
+        const gridHelper = new THREE.GridHelper(120, 60, 0x4444ff, 0x222233);
+        gridHelper.position.y = 0.05;
+        scene.add(gridHelper);
+
+        // --- Helpers ---
+        function getGridPos(x, z) {
+            const gx = Math.floor(x / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
+            const gz = Math.floor(z / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
+            return { x: gx, z: gz, key: `${gx},${gz}` };
         }
 
-        // --- Building Renderer ---
-        function createBox(color, x, y, z, w, h, d, parent) {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mat = new THREE.MeshStandardMaterial({ color: color });
-            const mesh = new THREE.Mesh(geo, mat);
+        function createBox(color, w, h, d, x, y, z, parent, emissive = false) {
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: color,
+                emissive: emissive ? color : 0x000000,
+                emissiveIntensity: emissive ? 0.8 : 0,
+                roughness: 0.2,
+                metalness: 0.5
+            });
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
             mesh.position.set(x, y, z);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
@@ -353,611 +367,662 @@
             return mesh;
         }
 
-        function createBuildingMesh(id) {
+        // --- Building System (Visuals) ---
+        function generateBuildingMesh(typeId, level = 1) {
             const group = new THREE.Group();
             const anims = [];
 
-            if (id === 'path') {
-                createBox(0x808080, 0, 0.05, 0, CONFIG.tileSize, 0.1, CONFIG.tileSize, group);
-                // Markings
-                createBox(0xffffff, 0, 0.06, 0, 0.2, 0.02, 1, group);
-                createBox(0xffffff, 0, 0.06, 0, 1, 0.02, 0.2, group);
-            } 
-            else if (id === 'solar') {
-                createBox(0x555555, 0, 0.1, 0, 1.5, 0.2, 1.5, group); // Base
-                const panel = createBox(0x3366cc, 0, 0.5, 0, 1.4, 0.1, 1.4, group); // Panel
+            // Helper for level colors
+            const accent = level === 1 ? 0x00d4ff : (level === 2 ? 0xff00ff : 0xffd700); // Blue -> Pink -> Gold
+            const baseColor = 0x222222;
+
+            if (typeId === 'path') {
+                createBox(0x333333, CONFIG.tileSize, 0.1, CONFIG.tileSize, 0, 0.05, 0, group);
+                // Glowing Lines
+                createBox(0x00d4ff, 0.1, 0.11, CONFIG.tileSize, -0.8, 0.05, 0, group, true);
+                createBox(0x00d4ff, 0.1, 0.11, CONFIG.tileSize, 0.8, 0.05, 0, group, true);
+            }
+            else if (typeId === 'solar') {
+                createBox(baseColor, 1.8, 0.2, 1.8, 0, 0.1, 0, group);
+                const panel = createBox(0x00ffff, 1.6, 0.1, 1.6, 0, 0.5, 0, group, true);
                 panel.rotation.x = -0.3;
-                createBox(0x222222, 0, 0.5, 0.6, 0.1, 0.8, 0.1, group); // Stand
+                // Level 2+ gets a rotating ring
+                if(level > 1) {
+                    const ring = createBox(accent, 0.2, 0.5, 0.2, 0, 1, 0, group, true);
+                    anims.push((dt) => ring.rotation.y += dt);
+                }
             }
-            else if (id === 'burger') {
-                createBox(0xffffff, 0, 1, 0, 1.8, 2, 1.8, group);
-                createBox(0xff0000, 0, 2.1, 0, 2, 0.2, 2, group);
-                // Giant Burger
-                createBox(0xd2691e, 0, 2.5, 0, 1.2, 0.3, 1.2, group); // Bun
-                createBox(0x4caf50, 0, 2.7, 0, 1.3, 0.1, 1.3, group); // Lettuce
-                createBox(0x8b4513, 0, 2.9, 0, 1.2, 0.3, 1.2, group); // Meat
-                createBox(0xd2691e, 0, 3.2, 0, 1.1, 0.3, 1.1, group); // Top Bun
+            else if (typeId === 'parking') {
+                createBox(0x111111, 3.8, 0.1, 3.8, 0, 0.05, 0, group); // Asphalt
+                // Stripes
+                createBox(0xffffff, 0.1, 0.11, 3, -0.5, 0.05, 0, group);
+                createBox(0xffffff, 0.1, 0.11, 3, 0.5, 0.05, 0, group);
+                // Cars
+                const car1 = createBox(Math.random()*0xffffff, 0.8, 0.5, 1.2, -1, 0.3, 0, group);
+                if(level > 1) createBox(Math.random()*0xffffff, 0.8, 0.5, 1.2, 1, 0.3, 1, group);
+                if(level > 2) createBox(Math.random()*0xffffff, 0.8, 0.5, 1.2, 1, 0.3, -1, group);
             }
-            else if (id === 'teacups') {
-                createBox(0x9C27B0, 0, 0.2, 0, 3.5, 0.4, 3.5, group);
-                const spinner = new THREE.Group();
-                spinner.position.y = 0.5;
-                group.add(spinner);
+            else if (typeId === 'bus') {
+                createBox(0x222222, 3.8, 0.2, 3.8, 0, 0.1, 0, group);
+                createBox(0x444444, 1, 2, 1, -1.5, 1, -1.5, group); // Shelter
+                createBox(accent, 1.2, 0.1, 1.2, -1.5, 2, -1.5, group, true); // Roof Light
+            }
+            else if (typeId === 'heli') {
+                createBox(0x111111, 3.8, 0.5, 3.8, 0, 0.25, 0, group);
+                // H
+                createBox(accent, 2, 0.1, 0.3, 0, 0.51, 0, group, true);
+                createBox(accent, 0.3, 0.1, 2, -0.8, 0.51, 0, group, true);
+                createBox(accent, 0.3, 0.1, 2, 0.8, 0.51, 0, group, true);
+                // Lights
+                if(level > 1) {
+                    [1, -1].forEach(x => [1, -1].forEach(z => {
+                        const l = createBox(0xff0000, 0.2, 0.2, 0.2, x*1.8, 0.6, z*1.8, group, true);
+                        anims.push(dt => l.material.emissiveIntensity = 0.5 + Math.sin(Date.now()*0.01)*0.5);
+                    }));
+                }
+            }
+            else if (typeId === 'burger') {
+                createBox(0xeeeeee, 1.8, 2, 1.8, 0, 1, 0, group);
+                createBox(0xff0000, 1.8, 0.3, 1.8, 0, 2.1, 0, group); // Stripe
+                // Neon Sign
+                const sign = createBox(accent, 1, 0.8, 0.1, 0, 2.8, 0.9, group, true);
+                if(level >= 2) createBox(0x00ff00, 2, 0.1, 2, 0, 0.1, 0, group, true); // Ground glow
+            }
+            else if (typeId === 'spinner') {
+                createBox(0x333333, 3.8, 0.5, 3.8, 0, 0.25, 0, group);
+                const rotor = new THREE.Group();
+                rotor.position.y = 1;
+                group.add(rotor);
+                createBox(accent, 0.5, 3, 0.5, 0, 1.5, 0, rotor, true); // Center shaft
                 
-                [1, -1].forEach(x => {
-                    [1, -1].forEach(z => {
-                        const cup = createBox(0xFF69B4, x, 0.5, z, 0.8, 0.6, 0.8, spinner);
-                    });
-                });
-
-                anims.push((dt, running) => {
-                    if(!running) return;
-                    spinner.rotation.y += 2 * dt;
+                const arms = level * 2 + 2; // 4 arms, 6 arms, 8 arms
+                for(let i=0; i<arms; i++) {
+                    const arm = new THREE.Group();
+                    arm.rotation.y = (i/arms) * Math.PI * 2;
+                    createBox(0x888888, 0.2, 0.2, 1.5, 0, 0.5, 1, arm); // Arm
+                    createBox(Math.random()*0xffffff, 0.6, 0.6, 0.6, 0, 0.8, 1.8, arm, true); // Pod
+                    rotor.add(arm);
+                }
+                anims.push((dt, on) => { if(on) rotor.rotation.y += dt * (1 + level*0.5); });
+            }
+            else if (typeId === 'drop') {
+                createBox(0x111111, 1.8, 0.5, 1.8, 0, 0.25, 0, group);
+                const h = 8 + level * 2;
+                createBox(0x555555, 0.5, h, 0.5, 0, h/2, 0, group); // Tower
+                createBox(accent, 0.2, h, 0.2, 0, h/2, 0, group, true); // Neon strip
+                
+                const cart = createBox(0xff9900, 1.2, 0.8, 1.2, 0, 1, 0, group, true);
+                let speed = 0, y = 1, state = 'up';
+                anims.push((dt, on) => {
+                    if(!on) return;
+                    if(state === 'up') {
+                        y += dt * 2;
+                        if(y > h - 1) { state = 'wait'; setTimeout(() => state = 'drop', 1000); }
+                    } else if (state === 'drop') {
+                        y -= dt * 15;
+                        if(y <= 1) { y=1; state = 'up'; }
+                    }
+                    cart.position.y = y;
                 });
             }
-            else if (id === 'coaster') {
-                // Supports
-                createBox(0xEEEEEE, -2, 2, -2, 0.5, 4, 0.5, group);
-                createBox(0xEEEEEE, 2, 2, 2, 0.5, 4, 0.5, group);
-                createBox(0xEEEEEE, 2, 2, -2, 0.5, 4, 0.5, group);
-                createBox(0xEEEEEE, -2, 2, 2, 0.5, 4, 0.5, group);
-                
-                // Track Loop
+            else if (typeId === 'coaster') {
+                // Simplified Coaster Loop
                 const track = new THREE.Group();
-                const torusGeo = new THREE.TorusGeometry(2.5, 0.2, 8, 20);
-                const torusMat = new THREE.MeshStandardMaterial({color: 0xff0000});
-                const loop = new THREE.Mesh(torusGeo, torusMat);
-                loop.position.y = 3;
-                loop.rotation.y = Math.PI/4;
-                track.add(loop);
+                const radius = 3 + level; 
+                const tube = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.3, 8, 30), new THREE.MeshStandardMaterial({color: 0x5555ff, emissive: 0x2222aa}));
+                tube.position.y = radius;
+                tube.rotation.y = Math.PI/4;
+                track.add(tube);
                 group.add(track);
-
+                
                 // Cart
-                const cart = createBox(0xFFFF00, 0, 0, 0, 0.8, 0.5, 1.2, group);
-                let progress = 0;
-                
-                anims.push((dt, running) => {
-                    if(!running) return;
-                    progress += dt * 3;
-                    const angle = progress;
-                    // Simple orbital logic for visual flair (not physics accurate)
-                    cart.position.y = 3 + Math.sin(angle) * 2.5;
-                    cart.position.x = Math.cos(angle) * 2; // Approximate rotation
-                    cart.rotation.z = angle; 
+                const cart = createBox(accent, 0.8, 0.5, 1.2, 0,0,0, group, true);
+                let prog = 0;
+                anims.push((dt, on) => {
+                    if(!on) return;
+                    prog += dt * (2 + level * 0.5);
+                    cart.position.y = radius + Math.sin(prog)*radius;
+                    cart.position.x = Math.cos(prog)*2; // Fake 3d path
+                    cart.rotation.z = prog;
                 });
-            }
-            else if (id === 'haunted') {
-                createBox(0x2d3748, 0, 1.5, 0, 3.5, 3, 3, group); // Main
-                createBox(0x1a202c, -1, 3.5, 0, 1, 2, 1, group); // Tower
-                createBox(0xffff00, -1, 3.8, 0.51, 0.4, 0.4, 0.1, group).material.emissive = new THREE.Color(0xffff00); // Window
-                createBox(0x000000, 0, 1, 1.51, 1, 1.5, 0.1, group); // Door
-                
-                // Ghost particles would be here in a complex version
-            }
-            else if (id === 'ferris') {
-                 createBox(0xFFFFFF, -1, 3, 0, 0.3, 6, 0.3, group);
-                 createBox(0xFFFFFF, 1, 3, 0, 0.3, 6, 0.3, group);
-                 const wheel = new THREE.Group();
-                 wheel.position.y = 5;
-                 group.add(wheel);
-                 
-                 // Hub
-                 createBox(0x333333, 0,0,0, 2.2, 0.2, 0.2, wheel);
-                 
-                 for(let i=0; i<8; i++) {
-                     const arm = new THREE.Group();
-                     arm.rotation.z = (i/8) * Math.PI * 2;
-                     createBox(0xAAAAAA, 1.5, 0, 0, 3, 0.1, 0.1, arm);
-                     
-                     const cabin = createBox(i%2?0xff0000:0x0000ff, 3, 0, 0, 0.8, 0.8, 0.8, arm);
-                     // Counter-rotate cabin in update
-                     arm.userData = { cabin };
-                     wheel.add(arm);
-                 }
-                 
-                 anims.push((dt, running) => {
-                    if(!running) return;
-                    wheel.rotation.z -= dt * 0.5;
-                    wheel.children.forEach(c => {
-                        if(c.userData.cabin) c.userData.cabin.rotation.z += dt * 0.5;
-                    });
-                 });
             }
             else {
-                // Default generic
-                createBox(0xFF00FF, 0, 1, 0, 1, 2, 1, group);
+                // Arcade / Generic
+                createBox(0x222222, 1.8, 1.5, 1.8, 0, 0.75, 0, group);
+                createBox(accent, 1.8, 0.1, 1.8, 0, 1.5, 0, group, true); // Roof glow
+                if(level === 3) createBox(0xffff00, 0.5, 2, 0.5, 0, 2, 0, group, true); // Spire
             }
 
-            // Smoke emitter for breakdown (hidden by default)
-            const smokeGroup = new THREE.Group();
-            smokeGroup.visible = false;
-            smokeGroup.position.y = 2;
-            for(let i=0; i<5; i++) {
-                const p = createBox(0x555555, (Math.random()-0.5), i*0.5, (Math.random()-0.5), 0.3, 0.3, 0.3, smokeGroup);
-            }
-            group.add(smokeGroup);
-
-            return { mesh: group, anims, smoke: smokeGroup };
+            return { mesh: group, anims };
         }
 
-        // --- Ground & Grid ---
-        const groundGroup = new THREE.Group();
-        const planeGeo = new THREE.PlaneGeometry(120, 120);
-        const planeMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.grass });
-        const ground = new THREE.Mesh(planeGeo, planeMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        groundGroup.add(ground);
+        // --- Pathfinding & Connectivity ---
         
-        const gridHelper = new THREE.GridHelper(120, 60, 0xffffff, 0xffffff);
-        gridHelper.material.opacity = 0.15;
-        gridHelper.material.transparent = true;
-        gridHelper.position.y = 0.02;
-        scene.add(gridHelper);
-        scene.add(groundGroup);
+        // Find nearest path tile to a point
+        function findNearestPath(gridX, gridZ) {
+            // Check 4 neighbors
+            const dirs = [[0,1], [0,-1], [1,0], [-1,0]];
+            for(let d of dirs) {
+                const k = `${gridX + d[0]*CONFIG.tileSize},${gridZ + d[1]*CONFIG.tileSize}`;
+                if(gridMap.has(k) && gridMap.get(k).type === 'path') return { x: gridX + d[0]*CONFIG.tileSize, z: gridZ + d[1]*CONFIG.tileSize };
+            }
+            return null;
+        }
 
-        // --- Visitors ---
+        // BFS to check which buildings are connected to a Transport Hub
+        function updateConnectivity() {
+            // 1. Reset connected flags
+            STATE.buildings.forEach(b => b.isConnected = false);
+            
+            // 2. Find all transport hubs (Sources)
+            const queue = [];
+            const visited = new Set();
+            
+            STATE.buildings.filter(b => b.data.cat === 'trans').forEach(hub => {
+                // Add adjacent path tiles to queue
+                const node = findNearestPath(hub.x, hub.z);
+                if(node) {
+                    const key = `${node.x},${node.z}`;
+                    if(!visited.has(key)) {
+                        visited.add(key);
+                        queue.push(node);
+                    }
+                }
+                hub.isConnected = true; // Hubs always active
+            });
+
+            // 3. BFS through Paths
+            while(queue.length > 0) {
+                const curr = queue.shift();
+                
+                // Check neighbors
+                const dirs = [[0,CONFIG.tileSize], [0,-CONFIG.tileSize], [CONFIG.tileSize,0], [-CONFIG.tileSize,0]];
+                
+                for(let d of dirs) {
+                    const nx = curr.x + d[0];
+                    const nz = curr.z + d[1];
+                    const k = `${nx},${nz}`;
+                    
+                    if(gridMap.has(k)) {
+                        const obj = gridMap.get(k);
+                        
+                        if(obj.type === 'path' && !visited.has(k)) {
+                            visited.add(k);
+                            queue.push({x: nx, z: nz});
+                        }
+                        else if (obj.building && !obj.building.isConnected) {
+                            // We found a building adjacent to a connected path!
+                            obj.building.isConnected = true;
+                        }
+                    }
+                }
+            }
+
+            // Warning UI
+            const disconnected = STATE.buildings.filter(b => b.data.cat === 'ride' || b.data.cat === 'biz').some(b => !b.isConnected);
+            document.getElementById('warning-msg').style.opacity = disconnected ? 1 : 0;
+        }
+
+        // Simple A* for Visitor Movement (Road only)
+        function findPath(start, end) {
+            // start/end are grid coordinates
+            const startKey = `${start.x},${start.z}`;
+            const endKey = `${end.x},${end.z}`;
+            
+            const q = [{ pos: start, path: [] }];
+            const seen = new Set();
+            seen.add(startKey);
+
+            // Limit depth for performance
+            let iters = 0;
+            while(q.length > 0 && iters < 500) {
+                iters++;
+                // Sort by distance (A* heuristic) - simple implementation uses shift for BFS, let's just do BFS for simplicity on small grid
+                const curr = q.shift();
+                
+                if(Math.abs(curr.pos.x - end.x) < 1 && Math.abs(curr.pos.z - end.z) < 1) return curr.path;
+
+                const dirs = [[0,CONFIG.tileSize], [0,-CONFIG.tileSize], [CONFIG.tileSize,0], [-CONFIG.tileSize,0]];
+                for(let d of dirs) {
+                    const nx = curr.pos.x + d[0];
+                    const nz = curr.pos.z + d[1];
+                    const nk = `${nx},${nz}`;
+                    
+                    // Allow walking on Paths OR the destination building tile
+                    if(gridMap.has(nk) && !seen.has(nk)) {
+                        const cell = gridMap.get(nk);
+                        if(cell.type === 'path' || nk === endKey) {
+                            seen.add(nk);
+                            const newPath = [...curr.path, {x: nx, z: nz}];
+                            q.push({ pos: {x: nx, z: nz}, path: newPath });
+                        }
+                    }
+                }
+            }
+            return null; // No path
+        }
+
+
+        // --- Visitor Logic ---
         class Visitor {
             constructor() {
                 this.mesh = new THREE.Group();
-                const color = new THREE.Color().setHSL(Math.random(), 0.7, 0.5);
+                const color = new THREE.Color().setHSL(Math.random(), 1, 0.6); // Neon colors
                 
-                // Parts
-                const body = createBox(color, 0, 0.7, 0, 0.5, 0.6, 0.3, this.mesh);
-                const head = createBox(0xffccaa, 0, 1.2, 0, 0.3, 0.3, 0.3, this.mesh);
-                this.legL = createBox(0x222222, -0.15, 0.2, 0, 0.15, 0.4, 0.15, this.mesh);
-                this.legR = createBox(0x222222, 0.15, 0.2, 0, 0.15, 0.4, 0.15, this.mesh);
+                createBox(color, 0.4, 0.8, 0.4, 0, 0.4, 0, this.mesh, true); // Body
+                createBox(0xffffff, 0.2, 0.2, 0.2, 0, 0.9, 0, this.mesh, true); // Head
                 
-                // Spawn randomly on edge
-                const edge = Math.floor(Math.random()*4);
-                const offset = (Math.random()-0.5) * 80;
-                if(edge === 0) this.mesh.position.set(offset, 0, 60);
-                if(edge === 1) this.mesh.position.set(offset, 0, -60);
-                if(edge === 2) this.mesh.position.set(60, 0, offset);
-                if(edge === 3) this.mesh.position.set(-60, 0, offset);
-
-                this.target = new THREE.Vector3();
-                this.pickTarget();
-                this.speed = 4; // units per sec
+                // Find spawn (Transport hub)
+                const hubs = STATE.buildings.filter(b => b.data.cat === 'trans');
+                if(hubs.length === 0) { this.valid = false; return; }
+                
+                const spawn = hubs[Math.floor(Math.random()*hubs.length)];
+                this.mesh.position.set(spawn.x, 0, spawn.z);
+                
+                this.state = 'idle';
+                this.targetInfo = null;
+                this.path = [];
+                this.pathIndex = 0;
+                this.spawnPos = {x: spawn.x, z: spawn.z};
+                
                 scene.add(this.mesh);
+                this.valid = true;
+                
+                this.pickDestination();
             }
 
-            pickTarget() {
-                // Prefer buildings
-                if(STATE.buildings.length > 0 && Math.random() > 0.3) {
-                    const b = STATE.buildings[Math.floor(Math.random() * STATE.buildings.length)];
-                    this.target.copy(b.mesh.position);
-                    // Add random offset around building
-                    this.target.x += (Math.random()-0.5) * 4;
-                    this.target.z += (Math.random()-0.5) * 4;
-                } else {
-                    // Random wander
-                    this.target.set((Math.random()-0.5)*80, 0, (Math.random()-0.5)*80);
+            pickDestination() {
+                // Find connected rides
+                const targets = STATE.buildings.filter(b => (b.data.cat === 'ride' || b.data.cat === 'biz') && b.isConnected && !b.broken);
+                
+                if(targets.length > 0) {
+                    const t = targets[Math.floor(Math.random()*targets.length)];
+                    // Find nearest path tile to target
+                    const roadSpot = findNearestPath(t.x, t.z);
+                    
+                    if(roadSpot) {
+                        // Find nearest path tile to current pos
+                        const mySpot = findNearestPath(this.mesh.position.x, this.mesh.position.z);
+                        if(mySpot) {
+                            const path = findPath(mySpot, roadSpot);
+                            if(path) {
+                                this.path = path;
+                                this.pathIndex = 0;
+                                this.targetInfo = t;
+                                this.state = 'walking_to';
+                                return;
+                            }
+                        }
+                    }
                 }
+                
+                // If fail, go home
+                this.state = 'leaving';
             }
 
             update(dt) {
-                const pos = this.mesh.position;
-                const dir = new THREE.Vector3().subVectors(this.target, pos);
-                const dist = dir.length();
-                
-                if (dist < 1) {
-                    this.pickTarget();
-                    return;
+                if(this.state === 'walking_to' || this.state === 'leaving') {
+                    if(this.pathIndex < this.path.length) {
+                        const next = this.path[this.pathIndex];
+                        const targetVec = new THREE.Vector3(next.x, 0, next.z);
+                        const dir = new THREE.Vector3().subVectors(targetVec, this.mesh.position);
+                        
+                        if(dir.length() < 0.2) {
+                            this.pathIndex++;
+                        } else {
+                            dir.normalize();
+                            this.mesh.position.add(dir.multiplyScalar(6 * dt)); // Speed
+                            this.mesh.lookAt(targetVec);
+                        }
+                    } else {
+                        // Arrived
+                        if(this.state === 'walking_to') {
+                            this.state = 'visiting';
+                            this.mesh.visible = false; // "Inside"
+                            setTimeout(() => {
+                                if(this.mesh) {
+                                    this.mesh.visible = true;
+                                    this.state = 'leaving';
+                                    // Calculate path back to spawn
+                                    const start = findNearestPath(this.mesh.position.x, this.mesh.position.z);
+                                    const end = findNearestPath(this.spawnPos.x, this.spawnPos.z);
+                                    if(start && end) this.path = findPath(start, end) || [];
+                                    this.pathIndex = 0;
+                                }
+                            }, 3000); // Visit duration
+                        } else {
+                            // Left park
+                            this.destroy();
+                        }
+                    }
                 }
-                
-                dir.normalize();
+            }
 
-                // Path check: Check if current tile is a path
-                const gridPos = getGridPos(pos);
-                const tile = occupiedTiles.get(gridPos.key);
-                const onPath = tile && tile.data.type === 'path';
-                
-                const currentSpeed = onPath ? this.speed * 1.5 : this.speed;
-
-                pos.add(dir.multiplyScalar(currentSpeed * dt));
-                this.mesh.lookAt(this.target);
-
-                // Walk anim
-                const time = Date.now() * 0.01;
-                this.legL.rotation.x = Math.sin(time) * 0.5;
-                this.legR.rotation.x = -Math.sin(time) * 0.5;
+            destroy() {
+                scene.remove(this.mesh);
+                STATE.visitors = STATE.visitors.filter(v => v !== this);
             }
         }
 
-        // --- Game Actions ---
 
-        function placeBuilding(blueprint, x, z) {
-            const { mesh, anims, smoke } = createBuildingMesh(blueprint.id);
+        // --- Interaction ---
+        function placeBuilding(bp, x, z) {
+            const { mesh, anims } = generateBuildingMesh(bp.id, 1);
             mesh.position.set(x, 0, z);
-
-            // Pop in
-            mesh.scale.set(0,0,0);
-            let s = 0;
-            const grow = setInterval(() => { s+=0.1; mesh.scale.set(s,s,s); if(s>=1) clearInterval(grow); }, 20);
-            
             scene.add(mesh);
+            
+            // Smoke effect
+            const smoke = new THREE.Group();
+            for(let i=0; i<3; i++) createBox(0x333333, 0.5, 0.5, 0.5, (Math.random()-0.5), i+1, (Math.random()-0.5), smoke);
+            smoke.visible = false;
+            mesh.add(smoke);
 
-            const building = {
-                id: Date.now() + Math.random(),
-                typeId: blueprint.id,
-                data: blueprint,
+            const b = {
+                id: Date.now(),
+                data: bp,
                 mesh: mesh,
                 anims: anims,
                 smoke: smoke,
-                x: x, 
-                z: z,
+                x: x, z: z,
                 level: 1,
-                health: 100,
-                broken: false
+                broken: false,
+                isConnected: false
             };
-
-            STATE.buildings.push(building);
+            STATE.buildings.push(b);
             
-            // Occupy tiles
-            const size = blueprint.size;
-            const startX = x - (size-1); 
-            const startZ = z - (size-1); 
-            // Simple center-based occupation logic for simplicity in this version
-            // For 2x2, x is center, so we occupy around it
-            // We'll stick to 1 tile = 1 logic key for collision, but visual size varies
-            // Improved collision:
-            const span = (size * CONFIG.tileSize) / 2 - 0.5; 
-            // Actually, let's just mark the center tile for interaction simplicity
-            // In a full version, we'd mark grid cells.
-            occupiedTiles.set(`${x},${z}`, building);
-
-            playSound('build');
+            // Update Grid Map
+            // For multi-tile, we just map the center for now, or all covered
+            // Simply mapping center for logic is okay for this scope
+            gridMap.set(`${x},${z}`, { type: bp.type, building: b });
+            
+            updateConnectivity();
+            playAudio('build');
+        }
+        
+        function upgradeBuilding(b) {
+            if(b.level >= 3) return;
+            if(STATE.money < 100 * b.level) return;
+            
+            STATE.money -= 100 * b.level;
+            b.level++;
+            
+            // Rebuild Mesh
+            scene.remove(b.mesh);
+            const res = generateBuildingMesh(b.data.id, b.level);
+            b.mesh = res.mesh;
+            b.anims = res.anims;
+            b.mesh.position.set(b.x, 0, b.z);
+            scene.add(b.mesh);
+            
+            // Re-add smoke container (it was lost in rebuild)
+            const smoke = new THREE.Group();
+            for(let i=0; i<3; i++) createBox(0x333333, 0.5, 0.5, 0.5, (Math.random()-0.5), i+1, (Math.random()-0.5), smoke);
+            smoke.visible = false;
+            b.mesh.add(smoke);
+            b.smoke = smoke;
+            
+            updateUI();
+            updateContextUI();
+            playAudio('upgrade');
+        }
+        
+        function removeBuilding(b) {
+            scene.remove(b.mesh);
+            STATE.buildings = STATE.buildings.filter(x => x !== b);
+            gridMap.delete(`${b.x},${b.z}`);
+            updateConnectivity();
+            playAudio('delete');
         }
 
-        function removeBuilding(building) {
-            scene.remove(building.mesh);
-            STATE.buildings = STATE.buildings.filter(b => b !== building);
-            occupiedTiles.forEach((v, k) => { if(v === building) occupiedTiles.delete(k); });
-            playSound('delete');
-        }
-
-        function upgradeBuilding(building) {
-            if(STATE.money >= 100) {
-                STATE.money -= 100;
-                building.level++;
-                updateUI();
-                playSound('upgrade');
-                // Visual pop
-                building.mesh.scale.set(1.2, 1.2, 1.2);
-                setTimeout(() => building.mesh.scale.set(1,1,1), 200);
-            }
-        }
-
-        function fixBuilding(building) {
-            if(STATE.money >= 50) {
-                STATE.money -= 50;
-                building.health = 100;
-                building.broken = false;
-                building.smoke.visible = false;
-                updateUI();
-                playSound('fix');
-            }
-        }
-
-        // --- Input Handling ---
+        // --- Inputs ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        const placementPreview = new THREE.Mesh(
-            new THREE.BoxGeometry(CONFIG.tileSize, 1, CONFIG.tileSize),
-            new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.5, transparent: true })
-        );
-        scene.add(placementPreview);
-        placementPreview.visible = false;
+        const cursorBox = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), new THREE.MeshBasicMaterial({color: 0x00d4ff, wireframe: true}));
+        scene.add(cursorBox);
 
-        window.addEventListener('mousemove', (e) => {
-            if(STATE.isPaused) return;
+        window.addEventListener('mousemove', e => {
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
+            
+            if(!STATE.selectedBlueprint) { cursorBox.visible = false; return; }
+            
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(groundGroup.children);
-
-            if(intersects.length > 0) {
-                const hit = intersects[0].point;
-                const gridPos = getGridPos(hit);
-
-                if(STATE.selectedBlueprint) {
-                    placementPreview.visible = true;
-                    // Logic to center based on size
-                    let px = gridPos.x, pz = gridPos.z;
-                    if(STATE.selectedBlueprint.size % 2 === 0) {
-                        px += CONFIG.tileSize/2;
-                        pz += CONFIG.tileSize/2;
-                    }
-                    
-                    placementPreview.position.set(px, 0.5, pz);
-                    const scale = STATE.selectedBlueprint.size * CONFIG.tileSize;
-                    placementPreview.scale.set(STATE.selectedBlueprint.size, 1, STATE.selectedBlueprint.size); // Relative to box geom
-
-                    const isOccupied = occupiedTiles.has(gridPos.key); // Simple center check
-                    placementPreview.material.color.setHex(isOccupied ? 0xff0000 : 0x00ff00);
-                } else {
-                    placementPreview.visible = false;
+            const hits = raycaster.intersectObject(ground);
+            if(hits.length > 0) {
+                const pos = getGridPos(hits[0].point.x, hits[0].point.z);
+                cursorBox.visible = true;
+                cursorBox.position.set(pos.x, 0.5, pos.z);
+                
+                // Size adjust
+                const sz = STATE.selectedBlueprint.size;
+                cursorBox.scale.set(sz, 1, sz);
+                // Center adjust
+                if(sz % 2 === 0) {
+                     cursorBox.position.x += CONFIG.tileSize/2;
+                     cursorBox.position.z += CONFIG.tileSize/2;
                 }
+                
+                // Color check
+                const occupied = gridMap.has(pos.key); // Simple check
+                cursorBox.material.color.setHex(occupied ? 0xff0000 : 0x00d4ff);
             }
         });
 
-        window.addEventListener('pointerdown', (e) => {
-            if(!STATE.isPlaying || e.target.closest('#ui-layer button') || e.target.closest('.shop-item') || e.target.closest('#context-menu')) return;
-            
+        window.addEventListener('mousedown', e => {
+            if(e.target.closest('#ui-layer button') || e.target.closest('.shop-item') || e.target.closest('#context-menu')) return;
+            if(!STATE.isPlaying) return;
+
             raycaster.setFromCamera(mouse, camera);
-            
-            // Check for building clicks first
-            const buildingMeshes = STATE.buildings.map(b => b.mesh);
-            const buildHits = raycaster.intersectObjects(buildingMeshes, true); // Recursive
-            
-            if(buildHits.length > 0 && !STATE.selectedBlueprint) {
-                // Select Building
-                const root = findRoot(buildHits[0].object);
-                const building = STATE.buildings.find(b => b.mesh === root);
-                if(building) openContextMenu(building, e.clientX, e.clientY);
+
+            // 1. Try Click Building
+            const bHits = raycaster.intersectObjects(STATE.buildings.map(b=>b.mesh), true);
+            if(bHits.length > 0 && !STATE.selectedBlueprint) {
+                // Find root
+                let root = bHits[0].object;
+                while(root.parent && root.parent.type !== 'Scene') root = root.parent;
+                const b = STATE.buildings.find(x => x.mesh === root);
+                if(b) openContext(b, e.clientX, e.clientY);
                 return;
             }
 
-            // Build Logic
-            const intersects = raycaster.intersectObjects(groundGroup.children);
-            if(intersects.length > 0 && STATE.selectedBlueprint) {
-                const gridPos = getGridPos(intersects[0].point);
-                let px = gridPos.x, pz = gridPos.z;
-                if(STATE.selectedBlueprint.size % 2 === 0) {
-                    px += CONFIG.tileSize/2;
-                    pz += CONFIG.tileSize/2;
-                }
+            // 2. Try Place
+            if(STATE.selectedBlueprint) {
+                const gHits = raycaster.intersectObject(ground);
+                if(gHits.length > 0) {
+                    const pos = getGridPos(gHits[0].point.x, gHits[0].point.z);
+                    let px = pos.x, pz = pos.z;
+                    if(STATE.selectedBlueprint.size % 2 === 0) { px += 1; pz += 1; }
 
-                if(!occupiedTiles.has(gridPos.key)) {
-                    if(STATE.money >= STATE.selectedBlueprint.cost) {
-                        STATE.money -= STATE.selectedBlueprint.cost;
-                        placeBuilding(STATE.selectedBlueprint, px, pz);
-                        updateUI();
-                    } else {
-                        playSound('error');
-                    }
-                } else {
-                    playSound('error');
+                    if(!gridMap.has(pos.key)) {
+                        if(STATE.money >= STATE.selectedBlueprint.cost) {
+                            STATE.money -= STATE.selectedBlueprint.cost;
+                            placeBuilding(STATE.selectedBlueprint, px, pz);
+                            updateUI();
+                        } else playAudio('error');
+                    } else playAudio('error');
                 }
             } else {
-                closeContextMenu();
+                closeContext();
             }
         });
 
-        function findRoot(obj) {
-            if(obj.parent && obj.parent.type === 'Group' && obj.parent.parent && obj.parent.parent.type === 'Scene') return obj.parent;
-            if(obj.parent && obj.parent.type !== 'Scene') return findRoot(obj.parent);
-            return obj;
-        }
-
-        // --- UI Logic ---
-
-        function renderShop() {
-            const container = document.getElementById('shop-container');
-            container.innerHTML = '';
-            BLUEPRINTS.forEach(bp => {
-                const div = document.createElement('div');
-                div.className = 'shop-item';
-                div.innerHTML = `
-                    <div class="shop-item-icon">${bp.icon}</div>
-                    <div class="shop-item-name">${bp.name}</div>
-                    <div class="shop-item-cost">$${bp.cost}</div>
-                    ${bp.power !== 0 ? `<div class="shop-item-power">${bp.power > 0 ? '+' : ''}${bp.power}⚡</div>` : ''}
-                `;
-                div.onclick = (e) => {
-                    e.stopPropagation();
-                    closeContextMenu();
-                    if(STATE.selectedBlueprint === bp) {
-                        STATE.selectedBlueprint = null;
-                        div.classList.remove('active');
-                    } else {
-                        document.querySelectorAll('.shop-item').forEach(el => el.classList.remove('active'));
-                        STATE.selectedBlueprint = bp;
-                        div.classList.add('active');
-                        playSound('click');
-                    }
-                };
-                container.appendChild(div);
-            });
-        }
-
-        function openContextMenu(building, x, y) {
-            STATE.selectedBuilding = building;
-            const menu = document.getElementById('context-menu');
-            menu.style.display = 'flex';
-            menu.style.left = x + 'px';
-            menu.style.top = y + 'px';
-            
-            document.getElementById('ctx-name').innerText = building.data.name;
-            document.getElementById('ctx-level').innerText = building.level;
-            
-            // Calculate effective income
-            const inc = Math.floor(building.data.income * (1 + (building.level-1)*0.5));
-            document.getElementById('ctx-income').innerText = `$${inc}/s`;
-            
-            const statusEl = document.getElementById('ctx-status');
-            const fixBtn = document.getElementById('ctx-fix-btn');
-            
-            if(building.broken) {
-                statusEl.innerText = "BROKEN";
-                statusEl.style.color = "red";
-                fixBtn.style.display = 'block';
-            } else {
-                statusEl.innerText = "Running";
-                statusEl.style.color = "green";
-                fixBtn.style.display = 'none';
-            }
-        }
-
-        function closeContextMenu() {
-            document.getElementById('context-menu').style.display = 'none';
-            STATE.selectedBuilding = null;
-        }
-
-        document.getElementById('ctx-close-btn').onclick = closeContextMenu;
-        document.getElementById('ctx-delete-btn').onclick = () => {
-            if(STATE.selectedBuilding) removeBuilding(STATE.selectedBuilding);
-            closeContextMenu();
-        };
-        document.getElementById('ctx-upgrade-btn').onclick = () => {
-            if(STATE.selectedBuilding) {
-                upgradeBuilding(STATE.selectedBuilding);
-                openContextMenu(STATE.selectedBuilding, parseInt(document.getElementById('context-menu').style.left), parseInt(document.getElementById('context-menu').style.top)); // Refresh
-            }
-        };
-        document.getElementById('ctx-fix-btn').onclick = () => {
-            if(STATE.selectedBuilding) {
-                fixBuilding(STATE.selectedBuilding);
-                openContextMenu(STATE.selectedBuilding, parseInt(document.getElementById('context-menu').style.left), parseInt(document.getElementById('context-menu').style.top));
-            }
-        };
-
-        document.getElementById('pause-btn').onclick = () => {
-            STATE.isPaused = !STATE.isPaused;
-            document.getElementById('pause-btn').innerText = STATE.isPaused ? "▶️" : "⏸️";
-        };
-
-        // --- Audio System ---
-        let synth, polySynth, noise;
-        let musicLoop;
-
+        // --- Audio ---
+        let polySynth, drumSynth;
         async function initAudio() {
             await Tone.start();
             
-            // SFX Synth
-            synth = new Tone.Synth().toDestination();
-            
-            // Music Synth
+            // Melodic Synth
             polySynth = new Tone.PolySynth(Tone.Synth, {
-                oscillator: { type: "triangle" },
-                envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 1 }
+                oscillator: { type: "fatsawtooth" },
+                envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 1 }
             }).toDestination();
-            polySynth.volume.value = -12;
+            polySynth.volume.value = -15;
 
-            // Start Music Loop
-            const notes = ["C4", "E4", "G4", "B4", "C5", "G4", "E4", "C4"];
-            let idx = 0;
-            musicLoop = setInterval(() => {
-                if(!STATE.isPlaying || STATE.isPaused || !STATE.audioEnabled) return;
-                // Simple Arpeggio
-                const note = notes[idx % notes.length];
-                const note2 = notes[(idx + 2) % notes.length];
-                polySynth.triggerAttackRelease([note, note2], "8n");
-                idx++;
-            }, 300);
+            // Simple Beat
+            const loop = new Tone.Loop(time => {
+                if(STATE.audioEnabled && STATE.isPlaying && !STATE.isPaused) {
+                    // C Major 7th arpeggio feeling
+                    const notes = ["C4", "E4", "G4", "B4", "C5", "G4", "E4", "C4"];
+                    const note = notes[Math.floor(Date.now() / 250) % 8];
+                    polySynth.triggerAttackRelease(note, "8n", time);
+                }
+            }, "8n").start(0);
+            
+            Tone.Transport.start();
         }
 
-        function playSound(type) {
+        function playAudio(key) {
             if(!STATE.audioEnabled) return;
-            try {
-                if(type === 'click') synth.triggerAttackRelease("G5", "32n");
-                if(type === 'build') synth.triggerAttackRelease("C6", "16n");
-                if(type === 'error') synth.triggerAttackRelease("A3", "8n");
-                if(type === 'delete') synth.triggerAttackRelease("G2", "8n");
-                if(type === 'upgrade') synth.triggerAttackRelease("C5", "8n");
-                if(type === 'fix') synth.triggerAttackRelease("F5", "8n");
-            } catch(e) {}
+            const s = new Tone.Synth().toDestination();
+            s.volume.value = -10;
+            if(key === 'build') s.triggerAttackRelease("C6", "16n");
+            if(key === 'upgrade') s.triggerAttackRelease("E6", "8n");
+            if(key === 'delete') s.triggerAttackRelease("G2", "8n");
+            if(key === 'error') s.triggerAttackRelease("C3", "32n");
         }
 
-        document.getElementById('music-btn').onclick = () => {
-            STATE.audioEnabled = !STATE.audioEnabled;
-            document.getElementById('music-btn').classList.toggle('active', STATE.audioEnabled);
+        // --- UI Functions ---
+        function openContext(b, x, y) {
+            STATE.selectedBuilding = b;
+            const m = document.getElementById('context-menu');
+            m.style.display = 'flex';
+            m.style.left = x + 'px';
+            m.style.top = y + 'px';
+            updateContextUI();
+        }
+
+        function updateContextUI() {
+            if(!STATE.selectedBuilding) return;
+            const b = STATE.selectedBuilding;
+            document.getElementById('ctx-name').innerText = b.data.name;
+            document.getElementById('ctx-stars').innerText = "★".repeat(b.level) + "☆".repeat(3-b.level);
+            
+            const inc = Math.floor(b.data.income * (1 + (b.level-1)*0.5));
+            document.getElementById('ctx-income').innerText = b.data.income ? `$${inc}/s` : 'N/A';
+            document.getElementById('ctx-conn').innerText = b.isConnected ? "Linked" : "Disconnected";
+            document.getElementById('ctx-conn').style.color = b.isConnected ? "#00ff00" : "#ff0000";
+            
+            // Upgrade btn
+            const upBtn = document.getElementById('ctx-upgrade-btn');
+            if(b.level >= 3) { upBtn.style.display = 'none'; }
+            else {
+                upBtn.style.display = 'block';
+                document.getElementById('ctx-up-cost').innerText = b.level * 100;
+            }
+            
+            // Fix btn
+            const fixBtn = document.getElementById('ctx-fix-btn');
+            fixBtn.style.display = b.broken ? 'block' : 'none';
+        }
+
+        function closeContext() { document.getElementById('context-menu').style.display = 'none'; STATE.selectedBuilding = null; }
+
+        document.getElementById('ctx-close-btn').onclick = closeContext;
+        document.getElementById('ctx-delete-btn').onclick = () => { if(STATE.selectedBuilding) removeBuilding(STATE.selectedBuilding); closeContext(); };
+        document.getElementById('ctx-upgrade-btn').onclick = () => { if(STATE.selectedBuilding) upgradeBuilding(STATE.selectedBuilding); };
+        document.getElementById('ctx-fix-btn').onclick = () => { 
+            if(STATE.selectedBuilding && STATE.money >= 50) {
+                STATE.money -= 50;
+                STATE.selectedBuilding.broken = false;
+                STATE.selectedBuilding.smoke.visible = false;
+                updateUI();
+                updateContextUI();
+            }
         };
 
-        // --- Main Loop & Economy ---
-
-        function updateEconomy() {
-            let totalIncome = 0;
-            let totalPowerGen = 0;
-            let totalPowerUse = 0;
-
-            STATE.buildings.forEach(b => {
-                if(b.data.power > 0) totalPowerGen += b.data.power;
-                else totalPowerUse += Math.abs(b.data.power);
+        function renderShop() {
+            const c = document.getElementById('shop-container');
+            c.innerHTML = '';
+            BLUEPRINTS.forEach(bp => {
+                const el = document.createElement('div');
+                el.className = 'shop-item';
+                el.innerHTML = `
+                    <div class="shop-category" style="background:${bp.cat=='power'?'#ffff00':bp.cat=='ride'?'#ff00ff':'#00d4ff'}"></div>
+                    <div class="shop-item-icon">${bp.icon}</div>
+                    <div class="shop-item-name">${bp.name}</div>
+                    <div class="shop-item-cost">$${bp.cost}</div>
+                `;
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    closeContext();
+                    STATE.selectedBlueprint = bp;
+                    document.querySelectorAll('.shop-item').forEach(x => x.classList.remove('active'));
+                    el.classList.add('active');
+                };
+                c.appendChild(el);
             });
-
-            const powerAvailable = totalPowerGen >= totalPowerUse;
-            
-            STATE.buildings.forEach(b => {
-                if(b.data.type === 'ride' || b.data.type === 'shop') {
-                    // Breakdown Chance (1% every sec)
-                    if(!b.broken && Math.random() < 0.005) {
-                        b.broken = true;
-                        b.smoke.visible = true;
-                        playSound('error');
-                    }
-
-                    // Income calculation
-                    if(!b.broken && powerAvailable) {
-                        // Level multiplier
-                        totalIncome += b.data.income * (1 + (b.level-1)*0.5);
-                    }
-                }
-            });
-
-            STATE.money += totalIncome;
-            STATE.incomePerSecond = totalIncome;
-            STATE.power.current = totalPowerUse;
-            STATE.power.max = totalPowerGen;
-
-            updateUI();
         }
 
         function updateUI() {
-            const m = document.getElementById('money-display');
-            m.innerText = `$${Math.floor(STATE.money).toLocaleString()}`;
-            
-            const p = document.getElementById('power-display');
-            p.innerText = `${STATE.power.current}/${STATE.power.max}`;
-            p.className = (STATE.power.current > STATE.power.max) ? "stat-value danger" : "stat-value power";
-
-            document.getElementById('income-display').innerText = `$${Math.floor(STATE.incomePerSecond)}/s`;
+            document.getElementById('money-display').innerText = Math.floor(STATE.money).toLocaleString();
+            document.getElementById('income-display').innerText = `$${Math.floor(STATE.income)}/s`;
             document.getElementById('visitor-display').innerText = STATE.visitors.length;
+            
+            const pEl = document.getElementById('power-display');
+            pEl.innerText = `${STATE.power.current}/${STATE.power.max}`;
+            pEl.className = STATE.power.current > STATE.power.max ? "stat-value danger" : "stat-value power";
         }
 
-        // Loop Config
+        // --- Loop ---
         const clock = new THREE.Clock();
-        let ecoTimer = 0;
+        let secTimer = 0;
 
         function animate() {
             requestAnimationFrame(animate);
-
             const dt = clock.getDelta();
-
+            
             if(STATE.isPlaying && !STATE.isPaused) {
-                // Eco Tick (1 second)
-                ecoTimer += dt;
-                if(ecoTimer > 1) {
-                    updateEconomy();
-                    ecoTimer = 0;
-                }
+                secTimer += dt;
+                
+                // Logic Tick
+                if(secTimer >= 1) {
+                    secTimer = 0;
+                    
+                    // Calc Power
+                    let pGen = 0, pUse = 0, inc = 0;
+                    STATE.buildings.forEach(b => {
+                        if(b.data.power > 0) pGen += b.data.power;
+                        else pUse += Math.abs(b.data.power);
+                        
+                        // Breakdown
+                        if(b.data.cat === 'ride' && !b.broken && Math.random() < 0.01) {
+                            b.broken = true; b.smoke.visible = true; playAudio('error');
+                        }
 
-                // Buildings
-                const hasPower = STATE.power.max >= STATE.power.current;
-                STATE.buildings.forEach(b => {
-                    if(b.anims && b.anims.length) {
-                        // Only animate if running
-                        const running = !b.broken && hasPower;
-                        b.anims.forEach(anim => anim(dt, running));
+                        // Income (Must be powered, connected, not broken)
+                        if(b.data.income && !b.broken && b.isConnected && pGen >= pUse) {
+                            inc += b.data.income * (1 + (b.level-1)*0.5);
+                        }
+                    });
+                    
+                    STATE.power = { current: pUse, max: pGen };
+                    STATE.income = inc;
+                    STATE.money += inc;
+                    updateUI();
+                    
+                    // Spawner
+                    const capacity = STATE.buildings.reduce((acc, b) => acc + (b.data.cap || 0), 0);
+                    if(STATE.visitors.length < capacity) {
+                        const v = new Visitor();
+                        if(v.valid) STATE.visitors.push(v);
+                        else v.destroy(); // No valid spawn
                     }
-                });
-
-                // Visitors
-                STATE.visitors.forEach(v => v.update(dt));
-
-                // Spawner
-                if(STATE.visitors.length < STATE.buildings.length * 3 + 5) {
-                    if(Math.random() < 0.02) new Visitor(); // 2% chance per frame roughly
                 }
+
+                // Anims
+                STATE.buildings.forEach(b => {
+                   const powered = STATE.power.max >= STATE.power.current;
+                   b.anims.forEach(fn => fn(dt, !b.broken && powered));
+                });
+                
+                STATE.visitors.forEach(v => v.update(dt));
             }
 
             controls.update();
-            renderer.render(scene, camera);
+            composer.render();
         }
 
-        // Init
+        // Boot
         document.getElementById('start-btn').onclick = async () => {
             document.getElementById('start-overlay').style.display = 'none';
             await initAudio();
@@ -966,11 +1031,25 @@
             animate();
         };
 
-        window.addEventListener('resize', () => {
+        // Resize
+        window.onresize = () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+            composer.setSize(window.innerWidth, window.innerHeight);
+        };
+        
+        // Pause
+        document.getElementById('pause-btn').onclick = () => {
+            STATE.isPaused = !STATE.isPaused;
+            document.getElementById('pause-btn').innerText = STATE.isPaused ? "▶️" : "⏸️";
+        };
+        
+        // Music Toggle
+        document.getElementById('music-btn').onclick = () => {
+            STATE.audioEnabled = !STATE.audioEnabled;
+            Tone.Destination.mute = !STATE.audioEnabled;
+        };
 
     </script>
 </body>
