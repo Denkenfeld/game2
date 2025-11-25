@@ -31,7 +31,7 @@
 
         /* Top HUD */
         .top-bar {
-            background: rgba(10, 10, 20, 0.85);
+            background: rgba(10, 10, 20, 0.9);
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
@@ -41,13 +41,21 @@
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
         }
 
-        .stats-container { display: flex; gap: 30px; }
+        .stats-container { display: flex; gap: 30px; align-items: center; }
         .stat-box { display: flex; flex-direction: column; align-items: center; }
-        .stat-label { font-size: 0.8rem; color: #00d4ff; text-transform: uppercase; letter-spacing: 2px; }
-        .stat-value { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .stat-label { font-size: 0.7rem; color: #00d4ff; text-transform: uppercase; letter-spacing: 2px; }
+        .stat-value { font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
         .stat-value.money { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.6); }
         .stat-value.power { color: #ff00ff; text-shadow: 0 0 10px rgba(255, 0, 255, 0.6); }
         .stat-value.danger { color: #ff3333; animation: blink 1s infinite; }
+
+        /* Happiness Barometer */
+        .happiness-box {
+            display: flex; flex-direction: column; align-items: center;
+            background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 10px; border: 1px solid #444;
+        }
+        #happy-icon { font-size: 2rem; transition: transform 0.2s; }
+        #happy-val { font-size: 0.8rem; font-weight: bold; color: #00ff00; }
 
         @keyframes blink { 50% { opacity: 0.5; } }
 
@@ -68,7 +76,7 @@
 
         /* Bottom Shop */
         .shop-bar {
-            background: rgba(10, 10, 20, 0.9);
+            background: rgba(10, 10, 20, 0.95);
             padding: 15px;
             display: flex;
             justify-content: center;
@@ -150,7 +158,7 @@
 
         /* Notifications */
         #warning-msg {
-            position: absolute; top: 80px; width: 100%; text-align: center;
+            position: absolute; top: 90px; width: 100%; text-align: center;
             color: #ff3333; font-weight: bold; font-size: 1.2rem; 
             text-shadow: 0 0 10px black; pointer-events: none; opacity: 0; transition: opacity 0.5s;
         }
@@ -183,7 +191,7 @@
         button.start-btn:hover { background: #ff00ff; color: #000; box-shadow: 0 0 40px #ff00ff; }
     </style>
     
-    <!-- Imports (EffectComposer for Bloom) -->
+    <!-- Imports -->
     <script type="importmap">
         {
             "imports": {
@@ -205,10 +213,14 @@
     <div id="ui-layer">
         <div class="top-bar">
             <div class="stats-container">
-                <div class="stat-box"><span class="stat-label">Credits</span><span class="stat-value money" id="money-display">2,000</span></div>
+                <div class="stat-box"><span class="stat-label">Credits</span><span class="stat-value money" id="money-display">3,000</span></div>
                 <div class="stat-box"><span class="stat-label">Grid Power</span><span class="stat-value power" id="power-display">0/0</span></div>
                 <div class="stat-box"><span class="stat-label">Guests</span><span class="stat-value" id="visitor-display">0</span></div>
-                <div class="stat-box"><span class="stat-label">Income</span><span class="stat-value" id="income-display">$0/s</span></div>
+                
+                <div class="happiness-box">
+                    <span id="happy-icon">😐</span>
+                    <span id="happy-val">50%</span>
+                </div>
             </div>
             <div class="controls-container">
                 <button class="icon-btn" id="music-btn">🎵</button>
@@ -216,7 +228,7 @@
             </div>
         </div>
 
-        <div id="warning-msg">⚠️ Some attractions are not connected to an Entrance!</div>
+        <div id="warning-msg">⚠️ Connect attractions to the Entrance!</div>
 
         <div id="context-menu">
             <h3 id="ctx-name">Ride Name</h3>
@@ -249,7 +261,7 @@
                 grass: 0x111116,
                 grid: 0x222233,
                 path: 0x333344,
-                pathGlow: 0x00d4ff,
+                dim: 0x333333,
                 selectGood: 0x00ff00,
                 selectBad: 0xff0000
             }
@@ -258,6 +270,7 @@
         const STATE = {
             money: 3000,
             power: { current: 0, max: 0 },
+            happiness: 50,
             income: 0,
             visitors: [],
             buildings: [],
@@ -272,9 +285,8 @@
         const BLUEPRINTS = [
             { id: 'path', name: 'Neon Road', cost: 10, power: 0, icon: '🛣️', type: 'path', size: 1, cat: 'infra' },
             { id: 'solar', name: 'Fusion Core', cost: 200, power: 50, icon: '🔋', type: 'utility', size: 1, cat: 'power' },
-            { id: 'parking', name: 'Parking Lot', cost: 500, power: -5, icon: '🚗', type: 'transport', size: 2, cat: 'trans', cap: 10 },
-            { id: 'bus', name: 'Bus Station', cost: 800, power: -10, icon: '🚌', type: 'transport', size: 2, cat: 'trans', cap: 20 },
-            { id: 'heli', name: 'Helipad', cost: 1500, power: -20, icon: '🚁', type: 'transport', size: 2, cat: 'trans', cap: 30 },
+            { id: 'parking', name: 'Parking Lot', cost: 500, power: -5, icon: '🚗', type: 'transport', size: 2, cat: 'trans', cap: 15 },
+            { id: 'bus', name: 'Bus Station', cost: 800, power: -10, icon: '🚌', type: 'transport', size: 2, cat: 'trans', cap: 25 },
             
             { id: 'burger', name: 'Cyber Burger', cost: 400, income: 20, power: -5, icon: '🍔', type: 'shop', size: 1, cat: 'biz' },
             { id: 'arcade', name: 'VR Arcade', cost: 800, income: 45, power: -15, icon: '🕹️', type: 'shop', size: 1, cat: 'biz' },
@@ -308,7 +320,7 @@
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
         bloomPass.threshold = 0;
-        bloomPass.strength = 1.2; // GLOW STRENGTH
+        bloomPass.strength = 1.2;
         bloomPass.radius = 0.5;
 
         const composer = new EffectComposer(renderer);
@@ -316,7 +328,7 @@
         composer.addPass(bloomPass);
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.5); // Dark ambient
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
         scene.add(ambientLight);
         
         const dirLight = new THREE.DirectionalLight(0xaaccff, 0.5);
@@ -363,22 +375,46 @@
             mesh.position.set(x, y, z);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            mesh.userData = { originalColor: color, originalEmissive: emissive ? color : 0x000000, isNeon: emissive };
             if (parent) parent.add(mesh);
             return mesh;
         }
 
-        // --- Building System (Visuals) ---
+        // --- Visual System Update ---
+        function updateBuildingVisuals(building, isConnected, hasPower) {
+            const active = isConnected && hasPower && !building.broken;
+            building.mesh.traverse(child => {
+                if (child.isMesh && child.userData) {
+                    // If it was meant to be neon, turn it on/off
+                    if(child.userData.isNeon) {
+                        child.material.emissive.setHex(active ? child.userData.originalEmissive : 0x000000);
+                        child.material.emissiveIntensity = active ? 0.8 : 0;
+                    }
+                    // Base colors also dim if inactive (optional, keeping simple for now)
+                    if(!active && !child.userData.isNeon) {
+                         child.material.color.setHex(CONFIG.colors.dim);
+                    } else if(active && !child.userData.isNeon) {
+                         child.material.color.setHex(child.userData.originalColor);
+                    }
+                }
+            });
+        }
+
+        // --- Building System ---
         function generateBuildingMesh(typeId, level = 1) {
             const group = new THREE.Group();
             const anims = [];
-
-            // Helper for level colors
-            const accent = level === 1 ? 0x00d4ff : (level === 2 ? 0xff00ff : 0xffd700); // Blue -> Pink -> Gold
+            const accent = level === 1 ? 0x00d4ff : (level === 2 ? 0xff00ff : 0xffd700);
             const baseColor = 0x222222;
 
-            if (typeId === 'path') {
+            if (typeId === 'entrance') {
+                createBox(0x222222, 1, 4, 1, -2, 2, 0, group);
+                createBox(0x222222, 1, 4, 1, 2, 2, 0, group);
+                createBox(0xff00ff, 5, 1, 1, 0, 4, 0, group, true); // Arch
+                createBox(0x00d4ff, 3, 0.5, 0.2, 0, 5, 0, group, true); // Sign
+            }
+            else if (typeId === 'path') {
                 createBox(0x333333, CONFIG.tileSize, 0.1, CONFIG.tileSize, 0, 0.05, 0, group);
-                // Glowing Lines
                 createBox(0x00d4ff, 0.1, 0.11, CONFIG.tileSize, -0.8, 0.05, 0, group, true);
                 createBox(0x00d4ff, 0.1, 0.11, CONFIG.tileSize, 0.8, 0.05, 0, group, true);
             }
@@ -386,61 +422,41 @@
                 createBox(baseColor, 1.8, 0.2, 1.8, 0, 0.1, 0, group);
                 const panel = createBox(0x00ffff, 1.6, 0.1, 1.6, 0, 0.5, 0, group, true);
                 panel.rotation.x = -0.3;
-                // Level 2+ gets a rotating ring
                 if(level > 1) {
                     const ring = createBox(accent, 0.2, 0.5, 0.2, 0, 1, 0, group, true);
                     anims.push((dt) => ring.rotation.y += dt);
                 }
             }
             else if (typeId === 'parking') {
-                createBox(0x111111, 3.8, 0.1, 3.8, 0, 0.05, 0, group); // Asphalt
-                // Stripes
+                createBox(0x111111, 3.8, 0.1, 3.8, 0, 0.05, 0, group);
                 createBox(0xffffff, 0.1, 0.11, 3, -0.5, 0.05, 0, group);
                 createBox(0xffffff, 0.1, 0.11, 3, 0.5, 0.05, 0, group);
-                // Cars
                 const car1 = createBox(Math.random()*0xffffff, 0.8, 0.5, 1.2, -1, 0.3, 0, group);
                 if(level > 1) createBox(Math.random()*0xffffff, 0.8, 0.5, 1.2, 1, 0.3, 1, group);
-                if(level > 2) createBox(Math.random()*0xffffff, 0.8, 0.5, 1.2, 1, 0.3, -1, group);
             }
             else if (typeId === 'bus') {
                 createBox(0x222222, 3.8, 0.2, 3.8, 0, 0.1, 0, group);
-                createBox(0x444444, 1, 2, 1, -1.5, 1, -1.5, group); // Shelter
-                createBox(accent, 1.2, 0.1, 1.2, -1.5, 2, -1.5, group, true); // Roof Light
-            }
-            else if (typeId === 'heli') {
-                createBox(0x111111, 3.8, 0.5, 3.8, 0, 0.25, 0, group);
-                // H
-                createBox(accent, 2, 0.1, 0.3, 0, 0.51, 0, group, true);
-                createBox(accent, 0.3, 0.1, 2, -0.8, 0.51, 0, group, true);
-                createBox(accent, 0.3, 0.1, 2, 0.8, 0.51, 0, group, true);
-                // Lights
-                if(level > 1) {
-                    [1, -1].forEach(x => [1, -1].forEach(z => {
-                        const l = createBox(0xff0000, 0.2, 0.2, 0.2, x*1.8, 0.6, z*1.8, group, true);
-                        anims.push(dt => l.material.emissiveIntensity = 0.5 + Math.sin(Date.now()*0.01)*0.5);
-                    }));
-                }
+                createBox(0x444444, 1, 2, 1, -1.5, 1, -1.5, group);
+                createBox(accent, 1.2, 0.1, 1.2, -1.5, 2, -1.5, group, true);
             }
             else if (typeId === 'burger') {
                 createBox(0xeeeeee, 1.8, 2, 1.8, 0, 1, 0, group);
-                createBox(0xff0000, 1.8, 0.3, 1.8, 0, 2.1, 0, group); // Stripe
-                // Neon Sign
-                const sign = createBox(accent, 1, 0.8, 0.1, 0, 2.8, 0.9, group, true);
-                if(level >= 2) createBox(0x00ff00, 2, 0.1, 2, 0, 0.1, 0, group, true); // Ground glow
+                createBox(0xff0000, 1.8, 0.3, 1.8, 0, 2.1, 0, group);
+                createBox(accent, 1, 0.8, 0.1, 0, 2.8, 0.9, group, true);
             }
             else if (typeId === 'spinner') {
                 createBox(0x333333, 3.8, 0.5, 3.8, 0, 0.25, 0, group);
                 const rotor = new THREE.Group();
                 rotor.position.y = 1;
                 group.add(rotor);
-                createBox(accent, 0.5, 3, 0.5, 0, 1.5, 0, rotor, true); // Center shaft
+                createBox(accent, 0.5, 3, 0.5, 0, 1.5, 0, rotor, true);
                 
-                const arms = level * 2 + 2; // 4 arms, 6 arms, 8 arms
+                const arms = level * 2 + 2;
                 for(let i=0; i<arms; i++) {
                     const arm = new THREE.Group();
                     arm.rotation.y = (i/arms) * Math.PI * 2;
-                    createBox(0x888888, 0.2, 0.2, 1.5, 0, 0.5, 1, arm); // Arm
-                    createBox(Math.random()*0xffffff, 0.6, 0.6, 0.6, 0, 0.8, 1.8, arm, true); // Pod
+                    createBox(0x888888, 0.2, 0.2, 1.5, 0, 0.5, 1, arm);
+                    createBox(Math.random()*0xffffff, 0.6, 0.6, 0.6, 0, 0.8, 1.8, arm, true);
                     rotor.add(arm);
                 }
                 anims.push((dt, on) => { if(on) rotor.rotation.y += dt * (1 + level*0.5); });
@@ -448,9 +464,8 @@
             else if (typeId === 'drop') {
                 createBox(0x111111, 1.8, 0.5, 1.8, 0, 0.25, 0, group);
                 const h = 8 + level * 2;
-                createBox(0x555555, 0.5, h, 0.5, 0, h/2, 0, group); // Tower
-                createBox(accent, 0.2, h, 0.2, 0, h/2, 0, group, true); // Neon strip
-                
+                createBox(0x555555, 0.5, h, 0.5, 0, h/2, 0, group);
+                createBox(accent, 0.2, h, 0.2, 0, h/2, 0, group, true);
                 const cart = createBox(0xff9900, 1.2, 0.8, 1.2, 0, 1, 0, group, true);
                 let speed = 0, y = 1, state = 'up';
                 anims.push((dt, on) => {
@@ -466,7 +481,6 @@
                 });
             }
             else if (typeId === 'coaster') {
-                // Simplified Coaster Loop
                 const track = new THREE.Group();
                 const radius = 3 + level; 
                 const tube = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.3, 8, 30), new THREE.MeshStandardMaterial({color: 0x5555ff, emissive: 0x2222aa}));
@@ -474,33 +488,26 @@
                 tube.rotation.y = Math.PI/4;
                 track.add(tube);
                 group.add(track);
-                
-                // Cart
                 const cart = createBox(accent, 0.8, 0.5, 1.2, 0,0,0, group, true);
                 let prog = 0;
                 anims.push((dt, on) => {
                     if(!on) return;
                     prog += dt * (2 + level * 0.5);
                     cart.position.y = radius + Math.sin(prog)*radius;
-                    cart.position.x = Math.cos(prog)*2; // Fake 3d path
+                    cart.position.x = Math.cos(prog)*2;
                     cart.rotation.z = prog;
                 });
             }
             else {
-                // Arcade / Generic
                 createBox(0x222222, 1.8, 1.5, 1.8, 0, 0.75, 0, group);
-                createBox(accent, 1.8, 0.1, 1.8, 0, 1.5, 0, group, true); // Roof glow
-                if(level === 3) createBox(0xffff00, 0.5, 2, 0.5, 0, 2, 0, group, true); // Spire
+                createBox(accent, 1.8, 0.1, 1.8, 0, 1.5, 0, group, true);
             }
 
             return { mesh: group, anims };
         }
 
-        // --- Pathfinding & Connectivity ---
-        
-        // Find nearest path tile to a point
+        // --- Logic & Connectivity ---
         function findNearestPath(gridX, gridZ) {
-            // Check 4 neighbors
             const dirs = [[0,1], [0,-1], [1,0], [-1,0]];
             for(let d of dirs) {
                 const k = `${gridX + d[0]*CONFIG.tileSize},${gridZ + d[1]*CONFIG.tileSize}`;
@@ -509,33 +516,30 @@
             return null;
         }
 
-        // BFS to check which buildings are connected to a Transport Hub
+        // BFS from Entrance
         function updateConnectivity() {
-            // 1. Reset connected flags
             STATE.buildings.forEach(b => b.isConnected = false);
             
-            // 2. Find all transport hubs (Sources)
+            const entrance = STATE.buildings.find(b => b.data.type === 'entrance');
+            if(!entrance) return;
+
             const queue = [];
             const visited = new Set();
-            
-            STATE.buildings.filter(b => b.data.cat === 'trans').forEach(hub => {
-                // Add adjacent path tiles to queue
-                const node = findNearestPath(hub.x, hub.z);
-                if(node) {
-                    const key = `${node.x},${node.z}`;
-                    if(!visited.has(key)) {
-                        visited.add(key);
-                        queue.push(node);
-                    }
-                }
-                hub.isConnected = true; // Hubs always active
-            });
 
-            // 3. BFS through Paths
+            // Entrance itself is connected
+            entrance.isConnected = true; 
+            
+            // Start BFS from path adjacent to entrance
+            const node = findNearestPath(entrance.x, entrance.z);
+            if(node) {
+                const key = `${node.x},${node.z}`;
+                visited.add(key);
+                queue.push(node);
+            }
+
             while(queue.length > 0) {
                 const curr = queue.shift();
                 
-                // Check neighbors
                 const dirs = [[0,CONFIG.tileSize], [0,-CONFIG.tileSize], [CONFIG.tileSize,0], [-CONFIG.tileSize,0]];
                 
                 for(let d of dirs) {
@@ -545,50 +549,42 @@
                     
                     if(gridMap.has(k)) {
                         const obj = gridMap.get(k);
-                        
+                        // Path -> Continue BFS
                         if(obj.type === 'path' && !visited.has(k)) {
                             visited.add(k);
                             queue.push({x: nx, z: nz});
                         }
+                        // Building -> Mark Connected
                         else if (obj.building && !obj.building.isConnected) {
-                            // We found a building adjacent to a connected path!
                             obj.building.isConnected = true;
+                            // Note: Transport hubs can propagate too if they are paths logic, but here we just need them to BE connected
                         }
                     }
                 }
             }
 
-            // Warning UI
-            const disconnected = STATE.buildings.filter(b => b.data.cat === 'ride' || b.data.cat === 'biz').some(b => !b.isConnected);
+            // Warning UI logic
+            const disconnected = STATE.buildings.filter(b => (b.data.cat === 'ride' || b.data.cat === 'biz') && !b.isConnected).length > 0;
             document.getElementById('warning-msg').style.opacity = disconnected ? 1 : 0;
+            if(!disconnected) document.getElementById('warning-msg').style.opacity = 0;
         }
 
-        // Simple A* for Visitor Movement (Road only)
         function findPath(start, end) {
-            // start/end are grid coordinates
             const startKey = `${start.x},${start.z}`;
             const endKey = `${end.x},${end.z}`;
-            
             const q = [{ pos: start, path: [] }];
             const seen = new Set();
             seen.add(startKey);
-
-            // Limit depth for performance
             let iters = 0;
-            while(q.length > 0 && iters < 500) {
+            while(q.length > 0 && iters < 600) {
                 iters++;
-                // Sort by distance (A* heuristic) - simple implementation uses shift for BFS, let's just do BFS for simplicity on small grid
                 const curr = q.shift();
-                
                 if(Math.abs(curr.pos.x - end.x) < 1 && Math.abs(curr.pos.z - end.z) < 1) return curr.path;
-
                 const dirs = [[0,CONFIG.tileSize], [0,-CONFIG.tileSize], [CONFIG.tileSize,0], [-CONFIG.tileSize,0]];
                 for(let d of dirs) {
                     const nx = curr.pos.x + d[0];
                     const nz = curr.pos.z + d[1];
                     const nk = `${nx},${nz}`;
-                    
-                    // Allow walking on Paths OR the destination building tile
                     if(gridMap.has(nk) && !seen.has(nk)) {
                         const cell = gridMap.get(nk);
                         if(cell.type === 'path' || nk === endKey) {
@@ -599,21 +595,19 @@
                     }
                 }
             }
-            return null; // No path
+            return null;
         }
 
-
-        // --- Visitor Logic ---
+        // --- Visitor ---
         class Visitor {
             constructor() {
                 this.mesh = new THREE.Group();
-                const color = new THREE.Color().setHSL(Math.random(), 1, 0.6); // Neon colors
+                const color = new THREE.Color().setHSL(Math.random(), 1, 0.6);
+                createBox(color, 0.4, 0.8, 0.4, 0, 0.4, 0, this.mesh, true);
+                createBox(0xffffff, 0.2, 0.2, 0.2, 0, 0.9, 0, this.mesh, true);
                 
-                createBox(color, 0.4, 0.8, 0.4, 0, 0.4, 0, this.mesh, true); // Body
-                createBox(0xffffff, 0.2, 0.2, 0.2, 0, 0.9, 0, this.mesh, true); // Head
-                
-                // Find spawn (Transport hub)
-                const hubs = STATE.buildings.filter(b => b.data.cat === 'trans');
+                // Spawn at a connected Transport Hub
+                const hubs = STATE.buildings.filter(b => b.data.cat === 'trans' && b.isConnected);
                 if(hubs.length === 0) { this.valid = false; return; }
                 
                 const spawn = hubs[Math.floor(Math.random()*hubs.length)];
@@ -627,36 +621,29 @@
                 
                 scene.add(this.mesh);
                 this.valid = true;
-                
                 this.pickDestination();
             }
 
             pickDestination() {
-                // Find connected rides
-                const targets = STATE.buildings.filter(b => (b.data.cat === 'ride' || b.data.cat === 'biz') && b.isConnected && !b.broken);
+                // Find connected & working rides
+                const targets = STATE.buildings.filter(b => (b.data.cat === 'ride' || b.data.cat === 'biz') && b.isConnected && !b.broken && STATE.power.current <= STATE.power.max);
                 
-                if(targets.length > 0) {
+                if(targets.length > 0 && Math.random() < (STATE.happiness/100)) {
                     const t = targets[Math.floor(Math.random()*targets.length)];
-                    // Find nearest path tile to target
                     const roadSpot = findNearestPath(t.x, t.z);
+                    const mySpot = findNearestPath(this.mesh.position.x, this.mesh.position.z);
                     
-                    if(roadSpot) {
-                        // Find nearest path tile to current pos
-                        const mySpot = findNearestPath(this.mesh.position.x, this.mesh.position.z);
-                        if(mySpot) {
-                            const path = findPath(mySpot, roadSpot);
-                            if(path) {
-                                this.path = path;
-                                this.pathIndex = 0;
-                                this.targetInfo = t;
-                                this.state = 'walking_to';
-                                return;
-                            }
+                    if(roadSpot && mySpot) {
+                        const path = findPath(mySpot, roadSpot);
+                        if(path) {
+                            this.path = path;
+                            this.pathIndex = 0;
+                            this.targetInfo = t;
+                            this.state = 'walking_to';
+                            return;
                         }
                     }
                 }
-                
-                // If fail, go home
                 this.state = 'leaving';
             }
 
@@ -666,44 +653,38 @@
                         const next = this.path[this.pathIndex];
                         const targetVec = new THREE.Vector3(next.x, 0, next.z);
                         const dir = new THREE.Vector3().subVectors(targetVec, this.mesh.position);
-                        
                         if(dir.length() < 0.2) {
                             this.pathIndex++;
                         } else {
                             dir.normalize();
-                            this.mesh.position.add(dir.multiplyScalar(6 * dt)); // Speed
+                            this.mesh.position.add(dir.multiplyScalar(6 * dt));
                             this.mesh.lookAt(targetVec);
                         }
                     } else {
-                        // Arrived
                         if(this.state === 'walking_to') {
                             this.state = 'visiting';
-                            this.mesh.visible = false; // "Inside"
+                            this.mesh.visible = false;
                             setTimeout(() => {
                                 if(this.mesh) {
                                     this.mesh.visible = true;
                                     this.state = 'leaving';
-                                    // Calculate path back to spawn
                                     const start = findNearestPath(this.mesh.position.x, this.mesh.position.z);
                                     const end = findNearestPath(this.spawnPos.x, this.spawnPos.z);
                                     if(start && end) this.path = findPath(start, end) || [];
                                     this.pathIndex = 0;
                                 }
-                            }, 3000); // Visit duration
+                            }, 3000); 
                         } else {
-                            // Left park
                             this.destroy();
                         }
                     }
                 }
             }
-
             destroy() {
                 scene.remove(this.mesh);
                 STATE.visitors = STATE.visitors.filter(v => v !== this);
             }
         }
-
 
         // --- Interaction ---
         function placeBuilding(bp, x, z) {
@@ -711,14 +692,13 @@
             mesh.position.set(x, 0, z);
             scene.add(mesh);
             
-            // Smoke effect
             const smoke = new THREE.Group();
             for(let i=0; i<3; i++) createBox(0x333333, 0.5, 0.5, 0.5, (Math.random()-0.5), i+1, (Math.random()-0.5), smoke);
             smoke.visible = false;
             mesh.add(smoke);
 
             const b = {
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 data: bp,
                 mesh: mesh,
                 anims: anims,
@@ -729,24 +709,22 @@
                 isConnected: false
             };
             STATE.buildings.push(b);
-            
-            // Update Grid Map
-            // For multi-tile, we just map the center for now, or all covered
-            // Simply mapping center for logic is okay for this scope
             gridMap.set(`${x},${z}`, { type: bp.type, building: b });
-            
             updateConnectivity();
             playAudio('build');
         }
-        
+
+        // Init the Main Entrance
+        function initMap() {
+             const entranceBP = { id: 'entrance', name: 'Main Gate', cost: 0, power: 0, icon: '⛩️', type: 'entrance', size: 2, cat: 'infra' };
+             // Place slightly offset so it aligns nicely on grid
+             placeBuilding(entranceBP, 0, 30);
+        }
+
         function upgradeBuilding(b) {
-            if(b.level >= 3) return;
-            if(STATE.money < 100 * b.level) return;
-            
+            if(b.level >= 3 || STATE.money < 100 * b.level) return;
             STATE.money -= 100 * b.level;
             b.level++;
-            
-            // Rebuild Mesh
             scene.remove(b.mesh);
             const res = generateBuildingMesh(b.data.id, b.level);
             b.mesh = res.mesh;
@@ -754,7 +732,6 @@
             b.mesh.position.set(b.x, 0, b.z);
             scene.add(b.mesh);
             
-            // Re-add smoke container (it was lost in rebuild)
             const smoke = new THREE.Group();
             for(let i=0; i<3; i++) createBox(0x333333, 0.5, 0.5, 0.5, (Math.random()-0.5), i+1, (Math.random()-0.5), smoke);
             smoke.visible = false;
@@ -765,8 +742,9 @@
             updateContextUI();
             playAudio('upgrade');
         }
-        
+
         function removeBuilding(b) {
+            if(b.data.type === 'entrance') return; // Cannot delete main gate
             scene.remove(b.mesh);
             STATE.buildings = STATE.buildings.filter(x => x !== b);
             gridMap.delete(`${b.x},${b.z}`);
@@ -774,13 +752,17 @@
             playAudio('delete');
         }
 
-        // --- Inputs ---
+        // --- Inputs (Updated with pointer events for reliable click) ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const cursorBox = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), new THREE.MeshBasicMaterial({color: 0x00d4ff, wireframe: true}));
         scene.add(cursorBox);
 
-        window.addEventListener('mousemove', e => {
+        let isDragging = false;
+        let downTime = 0;
+
+        window.addEventListener('pointermove', e => {
+            isDragging = true;
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             
@@ -792,32 +774,27 @@
                 const pos = getGridPos(hits[0].point.x, hits[0].point.z);
                 cursorBox.visible = true;
                 cursorBox.position.set(pos.x, 0.5, pos.z);
-                
-                // Size adjust
                 const sz = STATE.selectedBlueprint.size;
                 cursorBox.scale.set(sz, 1, sz);
-                // Center adjust
-                if(sz % 2 === 0) {
-                     cursorBox.position.x += CONFIG.tileSize/2;
-                     cursorBox.position.z += CONFIG.tileSize/2;
-                }
-                
-                // Color check
-                const occupied = gridMap.has(pos.key); // Simple check
+                if(sz % 2 === 0) { cursorBox.position.x += CONFIG.tileSize/2; cursorBox.position.z += CONFIG.tileSize/2; }
+                const occupied = gridMap.has(pos.key);
                 cursorBox.material.color.setHex(occupied ? 0xff0000 : 0x00d4ff);
             }
         });
 
-        window.addEventListener('mousedown', e => {
+        window.addEventListener('pointerdown', () => { isDragging = false; downTime = Date.now(); });
+
+        window.addEventListener('pointerup', e => {
+            const clickDuration = Date.now() - downTime;
+            if (clickDuration > 200 || isDragging) return; // Ignore drag interaction
             if(e.target.closest('#ui-layer button') || e.target.closest('.shop-item') || e.target.closest('#context-menu')) return;
             if(!STATE.isPlaying) return;
 
             raycaster.setFromCamera(mouse, camera);
 
-            // 1. Try Click Building
+            // 1. Select Existing
             const bHits = raycaster.intersectObjects(STATE.buildings.map(b=>b.mesh), true);
             if(bHits.length > 0 && !STATE.selectedBlueprint) {
-                // Find root
                 let root = bHits[0].object;
                 while(root.parent && root.parent.type !== 'Scene') root = root.parent;
                 const b = STATE.buildings.find(x => x.mesh === root);
@@ -825,20 +802,17 @@
                 return;
             }
 
-            // 2. Try Place
+            // 2. Place New
             if(STATE.selectedBlueprint) {
                 const gHits = raycaster.intersectObject(ground);
                 if(gHits.length > 0) {
                     const pos = getGridPos(gHits[0].point.x, gHits[0].point.z);
                     let px = pos.x, pz = pos.z;
                     if(STATE.selectedBlueprint.size % 2 === 0) { px += 1; pz += 1; }
-
-                    if(!gridMap.has(pos.key)) {
-                        if(STATE.money >= STATE.selectedBlueprint.cost) {
-                            STATE.money -= STATE.selectedBlueprint.cost;
-                            placeBuilding(STATE.selectedBlueprint, px, pz);
-                            updateUI();
-                        } else playAudio('error');
+                    if(!gridMap.has(pos.key) && STATE.money >= STATE.selectedBlueprint.cost) {
+                        STATE.money -= STATE.selectedBlueprint.cost;
+                        placeBuilding(STATE.selectedBlueprint, px, pz);
+                        updateUI();
                     } else playAudio('error');
                 }
             } else {
@@ -847,27 +821,22 @@
         });
 
         // --- Audio ---
-        let polySynth, drumSynth;
+        let polySynth;
         async function initAudio() {
             await Tone.start();
-            
-            // Melodic Synth
             polySynth = new Tone.PolySynth(Tone.Synth, {
                 oscillator: { type: "fatsawtooth" },
                 envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 1 }
             }).toDestination();
             polySynth.volume.value = -15;
 
-            // Simple Beat
             const loop = new Tone.Loop(time => {
                 if(STATE.audioEnabled && STATE.isPlaying && !STATE.isPaused) {
-                    // C Major 7th arpeggio feeling
                     const notes = ["C4", "E4", "G4", "B4", "C5", "G4", "E4", "C4"];
                     const note = notes[Math.floor(Date.now() / 250) % 8];
                     polySynth.triggerAttackRelease(note, "8n", time);
                 }
             }, "8n").start(0);
-            
             Tone.Transport.start();
         }
 
@@ -881,7 +850,7 @@
             if(key === 'error') s.triggerAttackRelease("C3", "32n");
         }
 
-        // --- UI Functions ---
+        // --- UI & Game Loop ---
         function openContext(b, x, y) {
             STATE.selectedBuilding = b;
             const m = document.getElementById('context-menu');
@@ -902,15 +871,21 @@
             document.getElementById('ctx-conn').innerText = b.isConnected ? "Linked" : "Disconnected";
             document.getElementById('ctx-conn').style.color = b.isConnected ? "#00ff00" : "#ff0000";
             
-            // Upgrade btn
             const upBtn = document.getElementById('ctx-upgrade-btn');
-            if(b.level >= 3) { upBtn.style.display = 'none'; }
-            else {
-                upBtn.style.display = 'block';
-                document.getElementById('ctx-up-cost').innerText = b.level * 100;
+            const delBtn = document.getElementById('ctx-delete-btn');
+            
+            if(b.data.type === 'entrance') {
+                upBtn.style.display = 'none';
+                delBtn.style.display = 'none';
+            } else {
+                 delBtn.style.display = 'block';
+                 if(b.level >= 3) upBtn.style.display = 'none';
+                 else {
+                     upBtn.style.display = 'block';
+                     document.getElementById('ctx-up-cost').innerText = b.level * 100;
+                 }
             }
             
-            // Fix btn
             const fixBtn = document.getElementById('ctx-fix-btn');
             fixBtn.style.display = b.broken ? 'block' : 'none';
         }
@@ -961,9 +936,14 @@
             const pEl = document.getElementById('power-display');
             pEl.innerText = `${STATE.power.current}/${STATE.power.max}`;
             pEl.className = STATE.power.current > STATE.power.max ? "stat-value danger" : "stat-value power";
+            
+            const hEl = document.getElementById('happy-val');
+            const hIc = document.getElementById('happy-icon');
+            hEl.innerText = Math.floor(STATE.happiness) + "%";
+            hEl.style.color = STATE.happiness > 70 ? "#00ff00" : (STATE.happiness > 40 ? "#ffff00" : "#ff0000");
+            hIc.innerText = STATE.happiness > 70 ? "😁" : (STATE.happiness > 40 ? "😐" : "😡");
         }
 
-        // --- Loop ---
         const clock = new THREE.Clock();
         let secTimer = 0;
 
@@ -974,45 +954,61 @@
             if(STATE.isPlaying && !STATE.isPaused) {
                 secTimer += dt;
                 
-                // Logic Tick
                 if(secTimer >= 1) {
                     secTimer = 0;
                     
-                    // Calc Power
                     let pGen = 0, pUse = 0, inc = 0;
+                    let attractionCount = 0;
+                    
                     STATE.buildings.forEach(b => {
+                        // Visual update
+                        updateBuildingVisuals(b, b.isConnected, STATE.power.max >= STATE.power.current || b.data.cat === 'power');
+
                         if(b.data.power > 0) pGen += b.data.power;
                         else pUse += Math.abs(b.data.power);
                         
-                        // Breakdown
-                        if(b.data.cat === 'ride' && !b.broken && Math.random() < 0.01) {
-                            b.broken = true; b.smoke.visible = true; playAudio('error');
-                        }
-
-                        // Income (Must be powered, connected, not broken)
-                        if(b.data.income && !b.broken && b.isConnected && pGen >= pUse) {
-                            inc += b.data.income * (1 + (b.level-1)*0.5);
+                        if(b.data.cat === 'ride' || b.data.cat === 'biz') {
+                            attractionCount++;
+                            if(!b.broken && Math.random() < 0.01) { b.broken = true; b.smoke.visible = true; playAudio('error'); }
+                            
+                            // Income requires happiness factor
+                            if(b.isConnected && !b.broken && pGen >= pUse) {
+                                inc += (b.data.income * (1 + (b.level-1)*0.5)) * (STATE.happiness / 100);
+                            }
                         }
                     });
                     
+                    // Happiness logic
+                    let targetHappiness = 100;
+                    if(STATE.visitors.length > 0) {
+                        const ratio = STATE.visitors.length / (Math.max(1, attractionCount) * 5); // 5 visitors per ride ideal
+                        if(ratio > 1) targetHappiness -= (ratio - 1) * 20; // Crowding penalty
+                    }
+                    if(pUse > pGen) targetHappiness -= 30; // Blackout penalty
+                    
+                    STATE.happiness += (targetHappiness - STATE.happiness) * 0.1;
+                    STATE.happiness = Math.max(0, Math.min(100, STATE.happiness));
+
                     STATE.power = { current: pUse, max: pGen };
                     STATE.income = inc;
                     STATE.money += inc;
                     updateUI();
                     
-                    // Spawner
+                    // Spawn if Connected Entrance exists and we have capacity
                     const capacity = STATE.buildings.reduce((acc, b) => acc + (b.data.cap || 0), 0);
-                    if(STATE.visitors.length < capacity) {
+                    const entrance = STATE.buildings.find(b => b.data.type === 'entrance');
+                    
+                    // Need Entrance + At least 1 attraction + Power + Road connection
+                    if(entrance && attractionCount > 0 && pGen >= pUse && STATE.visitors.length < capacity) {
                         const v = new Visitor();
                         if(v.valid) STATE.visitors.push(v);
-                        else v.destroy(); // No valid spawn
+                        else v.destroy();
                     }
                 }
 
-                // Anims
                 STATE.buildings.forEach(b => {
                    const powered = STATE.power.max >= STATE.power.current;
-                   b.anims.forEach(fn => fn(dt, !b.broken && powered));
+                   b.anims.forEach(fn => fn(dt, !b.broken && powered && b.isConnected));
                 });
                 
                 STATE.visitors.forEach(v => v.update(dt));
@@ -1022,16 +1018,15 @@
             composer.render();
         }
 
-        // Boot
         document.getElementById('start-btn').onclick = async () => {
             document.getElementById('start-overlay').style.display = 'none';
             await initAudio();
             STATE.isPlaying = true;
+            initMap();
             renderShop();
             animate();
         };
 
-        // Resize
         window.onresize = () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -1039,13 +1034,11 @@
             composer.setSize(window.innerWidth, window.innerHeight);
         };
         
-        // Pause
         document.getElementById('pause-btn').onclick = () => {
             STATE.isPaused = !STATE.isPaused;
             document.getElementById('pause-btn').innerText = STATE.isPaused ? "▶️" : "⏸️";
         };
         
-        // Music Toggle
         document.getElementById('music-btn').onclick = () => {
             STATE.audioEnabled = !STATE.audioEnabled;
             Tone.Destination.mute = !STATE.audioEnabled;
