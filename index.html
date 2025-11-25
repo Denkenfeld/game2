@@ -2,34 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>NEON ABYSS - Click to Play</title>
+<title>NEON ABYSS // INSTANT PLAY</title>
 <style>
-  body { margin:0; overflow:hidden; background:#000; }
-  #blocker { position:fixed; inset:0; background:#000; color:#0ff; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; cursor:pointer; z-index:999; font-family:Arial; }
-  h1 { font-size:80px; margin:0; text-shadow:0 0 30px #0ff; animation:g 2s infinite alternate; }
-  button { margin:40px; padding:20px 60px; font-size:30px; background:transparent; border:4px solid #0ff; color:#0ff; cursor:pointer; }
-  button:hover { background:#0ff; color:#000; }
-  #ui { position:fixed; inset:0; pointer-events:none; color:#0ff; font-family:monospace; font-size:20px; }
-  #crosshair { position:absolute; top:50%; left:50%; width:30px; height:30px; margin:-15px; opacity:0; }
-  #crosshair::before, #crosshair::after { content:''; position:absolute; background:#0ff; left:14px; top:4px; width:2px; height:22px; box-shadow:0 0 10px #0ff; }
-  #crosshair::after { width:22px; height:2px; left:4px; top:14px; }
-  @keyframes g { from { text-shadow:0 0 20px #0ff; } to { text-shadow:0 0 50px #0ff; } }
+  body{margin:0;overflow:hidden;background:#000}
+  #ui{position:fixed;inset:0;pointer-events:none;color:#0ff;font:20px monospace}
+  #crosshair{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px;
+    background:radial-gradient(circle,transparent 45%,#0ff 46%,#0ff 50%,transparent 51%);
+    opacity:0.9;box-shadow:0 0 20px #0ff}
+  #hud{position:absolute;bottom:20px;left:20px;text-shadow:0 0 10px #0ff}
 </style>
 </head>
 <body>
 
-<div id="blocker">
-  <h1>NEON ABYSS</h1>
-  <p style="font-size:28px">browser FPS • one click to start</p>
-  <button>CLICK TO PLAY</button>
-  <p>WASD + Mouse • R reload • ESC pause</p>
-</div>
-
 <div id="ui">
-  <div id="crosshair"></div>
-  <div style="position:absolute; bottom:20px; left:20px;">
-    SCORE <span id="score">0</span> • HEALTH <span id="health">100</span> • AMMO <span id="ammo">30</span>/<span id="totalAmmo">90</span>
-  </div>
+  <div id="crosshair">+</div>
+  <div id="hud">SCORE <span id="s">0</span> HEALTH <span id="h">100</span> AMMO <span id="a">30</span>/<span id="ta">90</span></div>
 </div>
 
 <script type="module">
@@ -39,139 +26,156 @@ import {EffectComposer} from 'https://cdn.jsdelivr.net/npm/three@0.169.0/example
 import {RenderPass} from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 
-const blocker = document.getElementById('blocker');
-blocker.addEventListener('click', startGame);
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000020, 0.001);
 
-let camera, scene, renderer, controls, composer;
-let playerBody, world;
-let enemies = [], bullets = [];
-let ammo = 30, totalAmmo = 90, score = 0;
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
 
-function startGame() {
-  blocker.style.display = 'none';
-  document.getElementById('crosshair').style.opacity = 1;
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new UnrealBloomPass(undefined, 1.6, 0.5, 0.85));
 
-  // Scene
-  scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x000020, 0.001);
-  camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
-  renderer = new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(innerWidth, innerHeight);
-  document.body.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0x4040ff, 0.6));
+const l1 = new THREE.PointLight(0xff00ff, 4, 100); l1.position.set(0,20,0); scene.add(l1);
+const l2 = new THREE.PointLight(0x00ffff, 4, 100); l2.position.set(30,20,-30); scene.add(l2);
 
-  // Post-processing
-  composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
-  composer.addPass(new UnrealBloomPass(undefined, 1.5, 0.4, 0.85));
+const controls = new PointerLockControls(camera, renderer.domElement);
+scene.add(controls.getObject());
 
-  // Lights
-  scene.add(new THREE.AmbientLight(0x4040ff, 0.5));
-  scene.add(new THREE.PointLight(0xff00ff, 3, 100));
-  
-  // Controls
-  controls = new PointerLockControls(camera, renderer.domElement);
-  scene.add(controls.getObject());
-  controls.lock();
+// Auto-lock on first click or mousemove
+document.body.addEventListener('click', () => controls.isLocked || controls.lock());
+document.body.addEventListener('mousemove', () => controls.isLocked || controls.lock());
 
-  // Simple physics (no external lib for max compatibility)
-  playerBody = { pos: new THREE.Vector3(0,5,0), vel: new THREE.Vector3() };
+// Ground + neon crates
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(1000,1000),
+  new THREE.MeshStandardMaterial({color:0x001133, metalness:0.9, roughness:0.2})
+);
+ground.rotation.x = -Math.PI/2;
+scene.add(ground);
 
-  // Ground + crates
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(500,500),
-    new THREE.MeshStandardMaterial({color:0x001122, metalness:0.9})
-  );
-  ground.rotation.x = -Math.PI/2;
-  scene.add(ground);
-
-  for(let i=0;i<80;i++){
-    const box = new THREE.Mesh(
-      new THREE.BoxGeometry(3+Math.random()*5,3+Math.random()*8,3+Math.random()*5),
-      new THREE.MeshStandardMaterial({color:0x112233, emissive:Math.random()>0.5?0x00ffff:0xff00ff, emissiveIntensity:0.6})
-    );
-    const a = Math.random()*Math.PI*2;
-    const d = 20+Math.random()*80;
-    box.position.set(Math.cos(a)*d, box.geometry.parameters.height/2, Math.sin(a)*d);
-    scene.add(box);
-  }
-
-  // Spawn enemies
-  setInterval(()=>enemies.length<20&&spawnEnemy(), 1500);
-
-  animate();
-}
-
-function spawnEnemy(){
-  const e = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(2),
-    new THREE.MeshStandardMaterial({color:0xff0044, emissive:0xff0044, emissiveIntensity:1})
+for(let i=0;i<100;i++){
+  const s = 2+Math.random()*6;
+  const box = new THREE.Mesh(
+    new THREE.BoxGeometry(s,s,s),
+    new THREE.MeshStandardMaterial({
+      color:0x112244,
+      emissive:Math.random()>0.5?0x00ffff:0xff00ff,
+      emissiveIntensity:0.7
+    })
   );
   const a = Math.random()*Math.PI*2;
-  e.position.set(Math.cos(a)*60, 5, Math.sin(a)*60);
-  e.userData = {health:3};
-  scene.add(e);
-  e.add(new THREE.PointLight(0xff0044, 3, 30));
-  enemies.push(e);
+  const d = 20+Math.random()*100;
+  box.position.set(Math.cos(a)*d, s/2, Math.sin(a)*d);
+  scene.add(box);
 }
 
+// Game vars
+let ammo=30, totalAmmo=90, score=0;
+const enemies=[], bullets=[];
+const pos = new THREE.Vector3(0,5,0);
+const vel = new THREE.Vector3();
+const keys = {};
+
+onkeydown = onkeyup = e => keys[e.key.toLowerCase()] = e.type[5]=='d';
+
+// Shooting
 document.addEventListener('click', () => {
   if(!controls.isLocked || ammo<=0) return;
   ammo--;
-  document.getElementById('ammo').textContent = ammo;
-
+  document.getElementById('a').textContent = ammo;
+  
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
-  const bullet = {pos:camera.position.clone(), vel:dir.multiplyScalar(300), life:60};
-  bullets.push(bullet);
+  bullets.push({
+    pos: camera.position.clone(),
+    vel: dir.multiplyScalar(400),
+    life: 80
+  });
 });
 
-const keys = {};
-onkeydown = onkeyup = e => keys[e.key.toLowerCase()] = e.type==='keydown';
+// Reload
+document.addEventListener('keydown', e => {
+  if(e.key==='r' && totalAmmo>0){
+    const take = Math.min(30-ammo, totalAmmo);
+    ammo += take; totalAmmo -= take;
+    document.getElementById('a').textContent = ammo;
+    document.getElementById('ta').textContent = totalAmmo;
+  }
+});
+
+// Enemy spawner
+setInterval(()=>enemies.length<25&&spawnEnemy(), 1200);
+
+function spawnEnemy(){
+  const e = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(2),
+    new THREE.MeshStandardMaterial({color:0xff0044, emissive:0xff0044, emissiveIntensity:1})
+  );
+  const a = Math.random()*Math.PI*2;
+  e.position.set(Math.cos(a)*80, 6, Math.sin(a)*80);
+  scene.add(e);
+  e.add(new THREE.PointLight(0xff0044, 4, 40));
+  enemies.push(e);
+}
 
 function animate(){
   requestAnimationFrame(animate);
 
   // Movement
-  const speed = keys['shiftleft']||keys['shiftright'] ? 25 : 12;
-  const dir = new THREE.Vector3();
-  camera.getWorldDirection(dir); dir.y=0; dir.normalize();
-  const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0));
-  if(keys['w']) playerBody.vel.add(dir.clone().multiplyScalar(speed));
-  if(keys['s']) playerBody.vel.sub(dir.clone().multiplyScalar(speed));
-  if(keys['a']) playerBody.vel.sub(right.clone().multiplyScalar(speed));
-  if(keys['d']) playerBody.vel.add(right.clone().multiplyScalar(speed));
-  playerBody.vel.multiplyScalar(0.9);
-  playerBody.pos.add(playerBody.vel.clone().multiplyScalar(0.016));
-  controls.getObject().position.copy(playerBody.pos);
+  const speed = keys['shift']?30:15;
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward); forward.y=0; forward.normalize();
+  const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0,1,0));
+  vel.set(0,0,0);
+  if(keys['w']) vel.add(forward);
+  if(keys['s']) vel.sub(forward);
+  if(keys['a']) vel.sub(right);
+  if(keys['d']) vel.add(right);
+  if(vel.lengthSq()>0) vel.normalize().multiplyScalar(speed);
+  pos.add(vel.multiplyScalar(0.016));
+  controls.getObject().position.copy(pos);
   controls.getObject().position.y += 1.6;
 
-  // Enemies chase
+  // Enemies chase player
   enemies.forEach(e=>{
-    const toPlayer = playerBody.pos.clone().sub(e.position);
-    toPlayer.y=0; toPlayer.normalize();
-    e.position.add(toPlayer.multiplyScalar(3));
+    const to = pos.clone().sub(e.position);
+    to.y=0; to.normalize();
+    e.position.add(to.multiplyScalar(2.5));
     e.rotation.y += 0.05;
   });
 
-  // Bullets
-  bullets = bullets.filter(b=>{
+  // Bullets & hits
+  bullets.forEach((b,i)=>{
     b.pos.add(b.vel.clone().multiplyScalar(0.016));
     b.life--;
-    if(b.life<0) return false;
-    for(let i=enemies.length-1;i>=0;i--){
-      if(enemies[i].position.distanceTo(b.pos)<3){
+    if(b.life<0){ bullets.splice(i,1); return; }
+    enemies.forEach((e,j)=>{
+      if(e.position.distanceTo(b.pos)<3){
         score += 100;
-        document.getElementById('score').textContent = score;
-        scene.remove(enemies[i]);
-        enemies.splice(i,1);
-        return false;
+        document.getElementById('s').textContent = score;
+        scene.remove(e);
+        enemies.splice(j,1);
+        bullets.splice(i,1);
       }
-    }
-    return true;
+    });
   });
 
-  composer.render(scene, camera);
+  l1.intensity = 4 + Math.sin(performance.now()*0.003)*2;
+  composer.render();
 }
+animate();
+
+window.addEventListener('resize',()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  composer.setSize(innerWidth,innerHeight);
+});
 </script>
 </body>
 </html>
