@@ -1,181 +1,772 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>NEON ABYSS // INSTANT PLAY</title>
-<style>
-  body{margin:0;overflow:hidden;background:#000}
-  #ui{position:fixed;inset:0;pointer-events:none;color:#0ff;font:20px monospace}
-  #crosshair{position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px;
-    background:radial-gradient(circle,transparent 45%,#0ff 46%,#0ff 50%,transparent 51%);
-    opacity:0.9;box-shadow:0 0 20px #0ff}
-  #hud{position:absolute;bottom:20px;left:20px;text-shadow:0 0 10px #0ff}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voxel Park Tycoon</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* Sky blue */
+            font-family: 'Roboto', sans-serif;
+            user-select: none;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 20px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.8rem;
+            color: #FFD700;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        /* Bottom Bar (Shop) */
+        .shop-bar {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            pointer-events: auto;
+            overflow-x: auto;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            padding-bottom: 20px; /* Safe area */
+        }
+
+        .shop-item {
+            width: 100px;
+            height: 120px;
+            background: #f0f0f0;
+            border: 3px solid #ccc;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.1s;
+        }
+
+        .shop-item:hover {
+            transform: translateY(-5px);
+            border-color: #3b82f6;
+        }
+
+        .shop-item.active {
+            border-color: #10b981;
+            background: #d1fae5;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .shop-item-icon {
+            font-size: 2rem;
+            margin-top: 10px;
+        }
+
+        .shop-item-name {
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .shop-item-cost {
+            background: #10b981;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .shop-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        /* Start Overlay */
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 999;
+            pointer-events: auto;
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 4rem;
+            margin-bottom: 10px;
+            color: #4ade80;
+            text-shadow: 4px 4px 0 #065f46;
+        }
+
+        button.start-btn {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 6px 0 #1d4ed8;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        button.start-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #1d4ed8;
+        }
+        
+        #tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            pointer-events: none;
+            display: none;
+            font-size: 0.9rem;
+        }
+    </style>
+    <!-- Imports -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 </head>
 <body>
 
-<div id="ui">
-  <div id="crosshair">+</div>
-  <div id="hud">SCORE <span id="s">0</span> HEALTH <span id="h">100</span> AMMO <span id="a">30</span>/<span id="ta">90</span></div>
-</div>
+    <!-- Start Screen -->
+    <div id="start-overlay">
+        <h1>VOXEL PARK TYCOON</h1>
+        <p>Build rides, attract visitors, earn money!</p>
+        <br>
+        <button class="start-btn" id="start-btn">OPEN PARK</button>
+    </div>
 
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
-import {PointerLockControls} from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/PointerLockControls.js';
-import {EffectComposer} from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/EffectComposer.js';
-import {RenderPass} from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/RenderPass.js';
-import {UnrealBloomPass} from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+    <!-- Game UI -->
+    <div id="ui-layer">
+        <div class="top-bar">
+            <div class="stat-box">
+                <span class="stat-label">Bank</span>
+                <span class="stat-value" id="money-display">$1,000</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Visitors</span>
+                <span class="stat-value" id="visitor-display">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Income/Sec</span>
+                <span class="stat-value" id="income-display">$0</span>
+            </div>
+        </div>
 
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x000020, 0.001);
+        <div class="shop-bar" id="shop-container">
+            <!-- Shop items injected by JS -->
+        </div>
+    </div>
+    
+    <div id="tooltip"></div>
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
-document.body.appendChild(renderer.domElement);
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-composer.addPass(new UnrealBloomPass(undefined, 1.6, 0.5, 0.85));
+        // --- Game Config & State ---
+        const CONFIG = {
+            gridSize: 40,
+            tileSize: 2,
+            colors: {
+                grass: 0x4caf50,
+                grassLight: 0x66bb6a,
+                path: 0x8d6e63,
+                sky: 0x87CEEB
+            }
+        };
 
-scene.add(new THREE.AmbientLight(0x4040ff, 0.6));
-const l1 = new THREE.PointLight(0xff00ff, 4, 100); l1.position.set(0,20,0); scene.add(l1);
-const l2 = new THREE.PointLight(0x00ffff, 4, 100); l2.position.set(30,20,-30); scene.add(l2);
+        const STATE = {
+            money: 1000,
+            incomePerSecond: 0,
+            visitors: [],
+            buildings: [],
+            selectedBlueprint: null,
+            isPlaying: false
+        };
 
-const controls = new PointerLockControls(camera, renderer.domElement);
-scene.add(controls.getObject());
+        const BLUEPRINTS = [
+            { id: 'path', name: 'Path', cost: 10, income: 0, icon: '🟫', type: 'path', color: 0x8d6e63 },
+            { id: 'burger', name: 'Burger Stall', cost: 250, income: 15, icon: '🍔', type: 'building', size: 1 },
+            { id: 'icecream', name: 'Ice Cream', cost: 400, income: 25, icon: '🍦', type: 'building', size: 1 },
+            { id: 'teacups', name: 'Tea Cups', cost: 1000, income: 80, icon: '☕', type: 'ride', size: 2 },
+            { id: 'droptower', name: 'Drop Tower', cost: 2500, income: 250, icon: '🗼', type: 'ride', size: 1 },
+            { id: 'ferris', name: 'Voxel Wheel', cost: 5000, income: 600, icon: '🎡', type: 'ride', size: 2 },
+        ];
 
-// Auto-lock on first click or mousemove
-document.body.addEventListener('click', () => controls.isLocked || controls.lock());
-document.body.addEventListener('mousemove', () => controls.isLocked || controls.lock());
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(CONFIG.colors.sky);
+        scene.fog = new THREE.Fog(CONFIG.colors.sky, 20, 90);
 
-// Ground + neon crates
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(1000,1000),
-  new THREE.MeshStandardMaterial({color:0x001133, metalness:0.9, roughness:0.2})
-);
-ground.rotation.x = -Math.PI/2;
-scene.add(ground);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(20, 25, 20);
 
-for(let i=0;i<100;i++){
-  const s = 2+Math.random()*6;
-  const box = new THREE.Mesh(
-    new THREE.BoxGeometry(s,s,s),
-    new THREE.MeshStandardMaterial({
-      color:0x112244,
-      emissive:Math.random()>0.5?0x00ffff:0xff00ff,
-      emissiveIntensity:0.7
-    })
-  );
-  const a = Math.random()*Math.PI*2;
-  const d = 20+Math.random()*100;
-  box.position.set(Math.cos(a)*d, s/2, Math.sin(a)*d);
-  scene.add(box);
-}
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
 
-// Game vars
-let ammo=30, totalAmmo=90, score=0;
-const enemies=[], bullets=[];
-const pos = new THREE.Vector3(0,5,0);
-const vel = new THREE.Vector3();
-const keys = {};
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.1; // Don't go below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 60;
+        controls.target.set(0, 0, 0);
 
-onkeydown = onkeyup = e => keys[e.key.toLowerCase()] = e.type[5]=='d';
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
 
-// Shooting
-document.addEventListener('click', () => {
-  if(!controls.isLocked || ammo<=0) return;
-  ammo--;
-  document.getElementById('a').textContent = ammo;
-  
-  const dir = new THREE.Vector3();
-  camera.getWorldDirection(dir);
-  bullets.push({
-    pos: camera.position.clone(),
-    vel: dir.multiplyScalar(400),
-    life: 80
-  });
-});
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(50, 80, 30);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 200;
+        dirLight.shadow.camera.left = -50;
+        dirLight.shadow.camera.right = 50;
+        dirLight.shadow.camera.top = 50;
+        dirLight.shadow.camera.bottom = -50;
+        scene.add(dirLight);
 
-// Reload
-document.addEventListener('keydown', e => {
-  if(e.key==='r' && totalAmmo>0){
-    const take = Math.min(30-ammo, totalAmmo);
-    ammo += take; totalAmmo -= take;
-    document.getElementById('a').textContent = ammo;
-    document.getElementById('ta').textContent = totalAmmo;
-  }
-});
+        // --- World Generation ---
+        const groundGroup = new THREE.Group();
+        const gridHelper = new THREE.Group();
+        const occupiedTiles = new Map(); // Key: "x,z", Value: buildingData
 
-// Enemy spawner
-setInterval(()=>enemies.length<25&&spawnEnemy(), 1200);
+        function generateGround() {
+            // Main ground plane
+            const geometry = new THREE.PlaneGeometry(100, 100);
+            const material = new THREE.MeshStandardMaterial({ color: CONFIG.colors.grass });
+            const ground = new THREE.Mesh(geometry, material);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            groundGroup.add(ground);
 
-function spawnEnemy(){
-  const e = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(2),
-    new THREE.MeshStandardMaterial({color:0xff0044, emissive:0xff0044, emissiveIntensity:1})
-  );
-  const a = Math.random()*Math.PI*2;
-  e.position.set(Math.cos(a)*80, 6, Math.sin(a)*80);
-  scene.add(e);
-  e.add(new THREE.PointLight(0xff0044, 4, 40));
-  enemies.push(e);
-}
+            // Visual Grid (Chequerboard subtle)
+            const gridSize = CONFIG.gridSize;
+            const tileSize = CONFIG.tileSize;
+            const gridGeo = new THREE.PlaneGeometry(tileSize - 0.1, tileSize - 0.1);
+            const gridMatA = new THREE.MeshStandardMaterial({ color: CONFIG.colors.grass, transparent: true, opacity: 0.8 });
+            const gridMatB = new THREE.MeshStandardMaterial({ color: CONFIG.colors.grassLight, transparent: true, opacity: 0.8 });
 
-function animate(){
-  requestAnimationFrame(animate);
+            for(let x = -gridSize/2; x < gridSize/2; x++) {
+                for(let z = -gridSize/2; z < gridSize/2; z++) {
+                    // Create an invisible interaction plane for raycasting, but visual logic is handled by main ground
+                    // We just rely on raycasting against the main plane for math
+                }
+            }
+            scene.add(groundGroup);
+            
+            // Grid helper for placement
+            const grid = new THREE.GridHelper(100, 50, 0xffffff, 0xffffff);
+            grid.material.opacity = 0.2;
+            grid.material.transparent = true;
+            grid.position.y = 0.01;
+            scene.add(grid);
+        }
+        generateGround();
 
-  // Movement
-  const speed = keys['shift']?30:15;
-  const forward = new THREE.Vector3();
-  camera.getWorldDirection(forward); forward.y=0; forward.normalize();
-  const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0,1,0));
-  vel.set(0,0,0);
-  if(keys['w']) vel.add(forward);
-  if(keys['s']) vel.sub(forward);
-  if(keys['a']) vel.sub(right);
-  if(keys['d']) vel.add(right);
-  if(vel.lengthSq()>0) vel.normalize().multiplyScalar(speed);
-  pos.add(vel.multiplyScalar(0.016));
-  controls.getObject().position.copy(pos);
-  controls.getObject().position.y += 1.6;
+        // --- Interaction Logic ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const placementPreview = new THREE.Mesh(
+            new THREE.BoxGeometry(CONFIG.tileSize, 1, CONFIG.tileSize),
+            new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.5, transparent: true })
+        );
+        scene.add(placementPreview);
+        placementPreview.visible = false;
 
-  // Enemies chase player
-  enemies.forEach(e=>{
-    const to = pos.clone().sub(e.position);
-    to.y=0; to.normalize();
-    e.position.add(to.multiplyScalar(2.5));
-    e.rotation.y += 0.05;
-  });
+        function getGridPos(point) {
+            const x = Math.floor(point.x / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
+            const z = Math.floor(point.z / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
+            return { x, z, key: `${x},${z}` };
+        }
 
-  // Bullets & hits
-  bullets.forEach((b,i)=>{
-    b.pos.add(b.vel.clone().multiplyScalar(0.016));
-    b.life--;
-    if(b.life<0){ bullets.splice(i,1); return; }
-    enemies.forEach((e,j)=>{
-      if(e.position.distanceTo(b.pos)<3){
-        score += 100;
-        document.getElementById('s').textContent = score;
-        scene.remove(e);
-        enemies.splice(j,1);
-        bullets.splice(i,1);
-      }
-    });
-  });
+        window.addEventListener('mousemove', (event) => {
+            if (!STATE.isPlaying) return;
+            
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  l1.intensity = 4 + Math.sin(performance.now()*0.003)*2;
-  composer.render();
-}
-animate();
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(groundGroup.children);
 
-window.addEventListener('resize',()=>{
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-  composer.setSize(innerWidth,innerHeight);
-});
-</script>
+            if (intersects.length > 0 && STATE.selectedBlueprint) {
+                const intersect = intersects[0];
+                const gridPos = getGridPos(intersect.point);
+                
+                placementPreview.visible = true;
+                placementPreview.position.set(gridPos.x, 0.5, gridPos.z);
+                
+                // Adjust size based on blueprint
+                const size = STATE.selectedBlueprint.size || 1;
+                const scale = size * CONFIG.tileSize;
+                const offset = (size - 1) * (CONFIG.tileSize / 2); // Center adjustment for multi-tile
+
+                // Multi-tile logic simplified: Pivot is bottom-left (or center for simplicity)
+                // Let's stick to center pivot, works best for even sizes if we shift
+                if (size === 2) {
+                     placementPreview.position.x += CONFIG.tileSize/2;
+                     placementPreview.position.z += CONFIG.tileSize/2;
+                }
+
+                placementPreview.scale.set(size, 1, size);
+                
+                // Check valid placement (simple collision)
+                // In a full game, we'd check all tiles covered by the building
+                const canBuild = !occupiedTiles.has(gridPos.key); // Simplified: check anchor only
+                placementPreview.material.color.setHex(canBuild ? 0x00ff00 : 0xff0000);
+            } else {
+                placementPreview.visible = false;
+            }
+        });
+
+        window.addEventListener('pointerdown', (event) => {
+            if (!STATE.isPlaying || event.target.closest('.shop-bar') || event.target.closest('.start-btn')) return;
+            if (event.button !== 0) return; // Left click only
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(groundGroup.children);
+
+            if (intersects.length > 0 && STATE.selectedBlueprint) {
+                const intersect = intersects[0];
+                const gridPos = getGridPos(intersect.point);
+                
+                // Handle size offsets for 2x2
+                let placeX = gridPos.x;
+                let placeZ = gridPos.z;
+                if(STATE.selectedBlueprint.size === 2) {
+                    placeX += CONFIG.tileSize/2;
+                    placeZ += CONFIG.tileSize/2;
+                }
+
+                // Check cost
+                if (STATE.money >= STATE.selectedBlueprint.cost) {
+                     // Check collision (Simple)
+                    if (!occupiedTiles.has(gridPos.key)) {
+                        buildStructure(STATE.selectedBlueprint, placeX, placeZ);
+                        deductMoney(STATE.selectedBlueprint.cost);
+                        addIncome(STATE.selectedBlueprint.income);
+                        playSound('build');
+                        
+                        // Mark tiles as occupied (Simple: just the anchor)
+                        occupiedTiles.set(gridPos.key, true);
+                    } else {
+                        playSound('error');
+                    }
+                } else {
+                    playSound('error');
+                    showTooltip("Not enough money!", event.clientX, event.clientY);
+                }
+            }
+        });
+
+        // --- Building Generation ---
+        function createVoxelMesh(color, x, y, z, w, h, d) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            return mesh;
+        }
+
+        function buildStructure(blueprint, x, z) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+
+            let animationUpdate = null;
+
+            if (blueprint.id === 'path') {
+                const mesh = createVoxelMesh(0x8d6e63, 0, 0.05, 0, CONFIG.tileSize, 0.1, CONFIG.tileSize);
+                group.add(mesh);
+            } 
+            else if (blueprint.id === 'burger') {
+                // Base
+                group.add(createVoxelMesh(0xFFFFFF, 0, 1, 0, 1.8, 2, 1.8));
+                // Roof
+                group.add(createVoxelMesh(0xff0000, 0, 2.2, 0, 2.2, 0.4, 2.2));
+                // Burger Icon (abstract)
+                group.add(createVoxelMesh(0xD2691E, 0, 2.8, 0, 1, 0.5, 1)); // Bun
+                group.add(createVoxelMesh(0x00FF00, 0, 2.85, 0, 1.1, 0.1, 1.1)); // Lettuce
+            }
+            else if (blueprint.id === 'icecream') {
+                group.add(createVoxelMesh(0xEEE8AA, 0, 1, 0, 1.8, 2, 1.8));
+                group.add(createVoxelMesh(0x2196F3, 0, 2.2, 0, 2.2, 0.4, 2.2));
+                // Cone
+                group.add(createVoxelMesh(0xFFFFFF, 0, 3, 0, 0.8, 1.5, 0.8));
+            }
+            else if (blueprint.id === 'droptower') {
+                // Tower
+                group.add(createVoxelMesh(0x555555, 0, 6, 0, 0.5, 12, 0.5));
+                // Car
+                const car = createVoxelMesh(0xFFA500, 0, 1, 0, 1.5, 1, 1.5);
+                group.add(car);
+                
+                // Anim Logic
+                let speed = 0.1;
+                let goingUp = true;
+                animationUpdate = () => {
+                    if(goingUp) {
+                        car.position.y += 0.05;
+                        if(car.position.y > 10) goingUp = false;
+                    } else {
+                        car.position.y -= 0.3; // Drop fast
+                        if(car.position.y < 1) goingUp = true;
+                    }
+                };
+            }
+            else if (blueprint.id === 'teacups') {
+                const base = createVoxelMesh(0x9C27B0, 0, 0.2, 0, 3.5, 0.4, 3.5);
+                group.add(base);
+                
+                const spinner = new THREE.Group();
+                // Cups
+                const cupGeo = new THREE.CylinderGeometry(0.4, 0.3, 0.6, 8);
+                const cupMat = new THREE.MeshStandardMaterial({color: 0xE1BEE7});
+                
+                const positions = [[1,0,1], [-1,0,1], [1,0,-1], [-1,0,-1]];
+                positions.forEach(pos => {
+                    const cup = new THREE.Mesh(cupGeo, cupMat);
+                    cup.position.set(pos[0], 0.8, pos[2]);
+                    cup.castShadow = true;
+                    spinner.add(cup);
+                });
+                group.add(spinner);
+
+                animationUpdate = () => {
+                    spinner.rotation.y += 0.03;
+                    spinner.children.forEach(c => c.rotation.y -= 0.05);
+                };
+            }
+            else if (blueprint.id === 'ferris') {
+                // Legs
+                group.add(createVoxelMesh(0xFFFFFF, -1.5, 2.5, 0, 0.2, 5, 0.2));
+                group.add(createVoxelMesh(0xFFFFFF, 1.5, 2.5, 0, 0.2, 5, 0.2));
+                
+                // Wheel
+                const wheel = new THREE.Group();
+                wheel.position.set(0, 4.5, 0);
+                
+                // Rim
+                const rimPoints = 8;
+                for(let i=0; i<rimPoints; i++) {
+                    const angle = (i / rimPoints) * Math.PI * 2;
+                    const wx = Math.cos(angle) * 2;
+                    const wy = Math.sin(angle) * 2;
+                    
+                    // Spoke
+                    const spoke = createVoxelMesh(0x888888, wx/2, wy/2, 0, Math.abs(wx)||0.2, Math.abs(wy)||0.2, 0.1);
+                    wheel.add(spoke);
+                    
+                    // Cabin
+                    const cabin = createVoxelMesh(i%2===0?0xFF0000:0xFFFF00, wx, wy, 0, 0.8, 0.8, 1);
+                    wheel.add(cabin);
+                }
+                group.add(wheel);
+                
+                animationUpdate = () => {
+                    wheel.rotation.z -= 0.01;
+                    // Counter rotate cabins to keep them upright (simple visual trick)
+                    wheel.children.forEach(child => {
+                        // Assuming children after index 7 are cabins? 
+                        // Simplified: just rotate everything, cabins spin too, funny physics
+                        child.rotation.z += 0.01; 
+                    });
+                };
+            }
+
+            // Pop in effect
+            group.scale.set(0,0,0);
+            let s = 0;
+            const popIn = setInterval(() => {
+                s += 0.2;
+                group.scale.set(s,s,s);
+                if(s >= 1) {
+                    group.scale.set(1,1,1);
+                    clearInterval(popIn);
+                }
+            }, 30);
+
+            scene.add(group);
+            
+            STATE.buildings.push({
+                mesh: group,
+                update: animationUpdate
+            });
+        }
+
+        // --- Visitor System (Peeps) ---
+        class Visitor {
+            constructor() {
+                this.mesh = new THREE.Group();
+                
+                // Minecraft/Roblox style body
+                const color = Math.random() * 0xffffff;
+                const legL = createVoxelMesh(0x333333, -0.15, 0.3, 0, 0.2, 0.6, 0.2);
+                const legR = createVoxelMesh(0x333333, 0.15, 0.3, 0, 0.2, 0.6, 0.2);
+                const body = createVoxelMesh(color, 0, 0.9, 0, 0.6, 0.6, 0.3);
+                const head = createVoxelMesh(0xffccaa, 0, 1.4, 0, 0.3, 0.3, 0.3);
+
+                this.mesh.add(legL, legR, body, head);
+                this.mesh.position.set(0, 0, 45); // Start at edge
+                
+                this.target = new THREE.Vector3(
+                    (Math.random() - 0.5) * CONFIG.gridSize, 
+                    0, 
+                    (Math.random() - 0.5) * CONFIG.gridSize
+                );
+                
+                this.speed = 0.05 + Math.random() * 0.05;
+                this.walkTick = 0;
+
+                this.legs = [legL, legR];
+                
+                scene.add(this.mesh);
+                STATE.visitors.push(this);
+            }
+
+            update() {
+                // Move
+                const dir = new THREE.Vector3().subVectors(this.target, this.mesh.position);
+                dir.y = 0;
+                if (dir.length() < 1) {
+                    // Pick new target
+                    this.target.set(
+                        (Math.random() - 0.5) * 30, // Stay somewhat central
+                        0,
+                        (Math.random() - 0.5) * 30
+                    );
+                } else {
+                    dir.normalize();
+                    this.mesh.position.add(dir.multiplyScalar(this.speed));
+                    this.mesh.lookAt(this.target);
+                }
+
+                // Animate Legs
+                this.walkTick += 0.2;
+                this.legs[0].rotation.x = Math.sin(this.walkTick) * 0.5;
+                this.legs[1].rotation.x = -Math.sin(this.walkTick) * 0.5;
+            }
+        }
+
+        function spawner() {
+            if(!STATE.isPlaying) return;
+            // Spawn visitor if we have attractions
+            if (STATE.buildings.length > 0 && STATE.visitors.length < STATE.buildings.length * 5) {
+                new Visitor();
+            }
+        }
+        setInterval(spawner, 2000);
+
+        // --- Economy & UI ---
+        function updateUI() {
+            document.getElementById('money-display').textContent = `$${Math.floor(STATE.money).toLocaleString()}`;
+            document.getElementById('income-display').textContent = `$${STATE.incomePerSecond}/s`;
+            document.getElementById('visitor-display').textContent = STATE.visitors.length;
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+            
+            BLUEPRINTS.forEach(bp => {
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.innerHTML = `
+                    <div class="shop-item-icon">${bp.icon}</div>
+                    <div class="shop-item-name">${bp.name}</div>
+                    <div class="shop-item-cost">$${bp.cost}</div>
+                `;
+                
+                div.onclick = () => {
+                    // Deselect previous
+                    document.querySelectorAll('.shop-item').forEach(el => el.classList.remove('active'));
+                    
+                    if (STATE.selectedBlueprint === bp) {
+                        STATE.selectedBlueprint = null; // Toggle off
+                    } else {
+                        STATE.selectedBlueprint = bp;
+                        div.classList.add('active');
+                        playSound('click');
+                    }
+                };
+                
+                container.appendChild(div);
+            });
+        }
+
+        function deductMoney(amount) {
+            STATE.money -= amount;
+            updateUI();
+        }
+
+        function addIncome(amount) {
+            STATE.incomePerSecond += amount;
+            updateUI();
+        }
+
+        function showTooltip(text, x, y) {
+            const el = document.getElementById('tooltip');
+            el.textContent = text;
+            el.style.display = 'block';
+            el.style.left = x + 'px';
+            el.style.top = (y - 40) + 'px';
+            setTimeout(() => { el.style.display = 'none'; }, 1000);
+        }
+
+        // Game Loop - Economy
+        setInterval(() => {
+            if (!STATE.isPlaying) return;
+            if (STATE.incomePerSecond > 0) {
+                STATE.money += STATE.incomePerSecond;
+                updateUI();
+                if(STATE.incomePerSecond > 100) playSound('coin'); // Auditory feedback occasionally
+            }
+        }, 1000);
+
+        // --- Audio (Tone.js) ---
+        // Setup simple synths
+        let synth, coinSynth;
+
+        async function initAudio() {
+            await Tone.start();
+            synth = new Tone.PolySynth(Tone.Synth).toDestination();
+            synth.volume.value = -10;
+            
+            coinSynth = new Tone.MembraneSynth().toDestination();
+            coinSynth.volume.value = -15;
+
+            // Background ambient
+            const filter = new Tone.AutoFilter(0.1).toDestination().start();
+            const noise = new Tone.Noise("pink").connect(filter).start();
+            noise.volume.value = -30;
+        }
+
+        function playSound(type) {
+            if (!STATE.isPlaying) return;
+            if (type === 'build') synth.triggerAttackRelease(["C5", "E5"], "8n");
+            if (type === 'click') synth.triggerAttackRelease("C6", "32n");
+            if (type === 'error') synth.triggerAttackRelease(["C3", "C2"], "16n");
+            if (type === 'coin') coinSynth.triggerAttackRelease("C6", "16n");
+        }
+
+        // --- Core Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (STATE.isPlaying) {
+                // Update buildings
+                STATE.buildings.forEach(b => {
+                    if (b.update) b.update();
+                });
+
+                // Update visitors
+                STATE.visitors.forEach(v => v.update());
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Initialization ---
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            document.getElementById('start-overlay').style.display = 'none';
+            await initAudio();
+            STATE.isPlaying = true;
+            renderShop();
+            updateUI();
+            
+            // Initial Camera Swing
+            const startPos = {x: 60, z: 60};
+            let swing = 0;
+            const intro = setInterval(() => {
+                swing += 0.05;
+                camera.position.x = 20 + Math.sin(swing) * 2;
+                if(swing > Math.PI) clearInterval(intro);
+            }, 16);
+        });
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+    </script>
 </body>
 </html>
