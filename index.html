@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voxel Park Tycoon</title>
+    <title>Voxel Park Tycoon 2.0</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto:wght@400;700&display=swap');
 
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB; /* Sky blue */
+            background-color: #87CEEB;
             font-family: 'Roboto', sans-serif;
             user-select: none;
         }
 
+        /* --- UI Layers --- */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -27,111 +28,137 @@
             justify-content: space-between;
         }
 
-        /* Top Bar */
+        /* Top HUD */
         .top-bar {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 15px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
             pointer-events: auto;
+            border-bottom: 4px solid rgba(0,0,0,0.2);
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 30px;
         }
 
         .stat-box {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0 20px;
         }
 
-        .stat-label {
-            font-size: 0.8rem;
-            opacity: 0.8;
-            text-transform: uppercase;
+        .stat-label { font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: #fff; text-shadow: 2px 2px 0 #000; }
+        .stat-value.money { color: #FFD700; }
+        .stat-value.power { color: #00FFFF; }
+        .stat-value.danger { color: #ff4444; }
+
+        .controls-container {
+            display: flex;
+            gap: 10px;
         }
 
-        .stat-value {
-            font-family: 'Fredoka One', cursive;
-            font-size: 1.8rem;
-            color: #FFD700;
-            text-shadow: 2px 2px 0px #000;
+        .icon-btn {
+            background: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 0 #ccc;
+            transition: transform 0.1s;
         }
+        .icon-btn:active { transform: translateY(4px); box-shadow: none; }
+        .icon-btn.active { background: #ffd700; color: #000; }
 
-        /* Bottom Bar (Shop) */
+        /* Bottom Shop */
         .shop-bar {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 15px;
             pointer-events: auto;
             overflow-x: auto;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-            padding-bottom: 20px; /* Safe area */
+            padding-bottom: 25px;
         }
 
         .shop-item {
-            width: 100px;
-            height: 120px;
-            background: #f0f0f0;
-            border: 3px solid #ccc;
-            border-radius: 10px;
+            min-width: 90px;
+            height: 110px;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 5px;
+            padding: 8px;
             cursor: pointer;
-            transition: transform 0.1s, border-color 0.1s;
+            transition: all 0.2s;
+            position: relative;
         }
 
-        .shop-item:hover {
-            transform: translateY(-5px);
-            border-color: #3b82f6;
-        }
+        .shop-item:hover { transform: translateY(-5px); border-color: #3b82f6; }
+        .shop-item.active { border-color: #10b981; background: #d1fae5; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        .shop-item-icon { font-size: 2rem; }
+        .shop-item-name { font-weight: bold; font-size: 0.7rem; text-align: center; color: #333; }
+        .shop-item-cost { background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+        .shop-item-power { position: absolute; top: -5px; right: -5px; background: #00FFFF; color: #000; font-size: 0.6rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; box-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
 
-        .shop-item.active {
-            border-color: #10b981;
-            background: #d1fae5;
-            box-shadow: 0 0 10px #10b981;
+        /* Context Menu (Upgrade/Fix) */
+        #context-menu {
+            position: absolute;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+            min-width: 200px;
+            z-index: 100;
+            transform: translate(-50%, -100%); /* Center above click */
         }
-
-        .shop-item-icon {
-            font-size: 2rem;
-            margin-top: 10px;
-        }
-
-        .shop-item-name {
+        
+        #context-menu h3 { margin: 0 0 5px 0; font-family: 'Fredoka One', cursive; color: #333; }
+        #context-menu p { margin: 0; font-size: 0.9rem; color: #666; }
+        
+        .ctx-stat { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+        
+        .ctx-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
             font-weight: bold;
-            font-size: 0.8rem;
-            text-align: center;
-        }
-
-        .shop-item-cost {
-            background: #10b981;
             color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            transition: filter 0.2s;
         }
+        .ctx-btn:hover { filter: brightness(1.1); }
+        .btn-upgrade { background: #3b82f6; }
+        .btn-fix { background: #f59e0b; animation: pulse 1s infinite; }
+        .btn-delete { background: #ef4444; margin-top: 5px; }
+        .btn-close { background: #9ca3af; font-size: 0.8rem; padding: 4px;}
 
-        .shop-item.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            filter: grayscale(1);
-        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         /* Start Overlay */
         #start-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 30, 40, 0.9);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -139,43 +166,36 @@
             color: white;
             z-index: 999;
             pointer-events: auto;
+            backdrop-filter: blur(10px);
         }
 
-        h1 {
-            font-family: 'Fredoka One', cursive;
-            font-size: 4rem;
-            margin-bottom: 10px;
-            color: #4ade80;
-            text-shadow: 4px 4px 0 #065f46;
-        }
+        h1 { font-family: 'Fredoka One', cursive; font-size: 4rem; margin-bottom: 0px; color: #4ade80; text-shadow: 4px 4px 0 #065f46; letter-spacing: 2px; }
+        p.subtitle { color: #cbd5e1; font-size: 1.2rem; margin-bottom: 40px; }
 
         button.start-btn {
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            background: #3b82f6;
+            padding: 20px 60px;
+            font-size: 1.8rem;
+            background: linear-gradient(to bottom, #3b82f6, #2563eb);
             color: white;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 6px 0 #1d4ed8;
+            font-family: 'Fredoka One', cursive;
+            box-shadow: 0 8px 0 #1d4ed8, 0 20px 20px rgba(0,0,0,0.2);
             transition: transform 0.1s, box-shadow 0.1s;
         }
+        button.start-btn:active { transform: translateY(8px); box-shadow: 0 0 0 #1d4ed8; }
 
-        button.start-btn:active {
-            transform: translateY(6px);
-            box-shadow: 0 0 0 #1d4ed8;
-        }
-        
         #tooltip {
             position: absolute;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border-radius: 6px;
             pointer-events: none;
             display: none;
             font-size: 0.9rem;
+            z-index: 200;
         }
     </style>
     <!-- Imports -->
@@ -193,32 +213,51 @@
 
     <!-- Start Screen -->
     <div id="start-overlay">
-        <h1>VOXEL PARK TYCOON</h1>
-        <p>Build rides, attract visitors, earn money!</p>
-        <br>
+        <h1>VOXEL PARK 2.0</h1>
+        <p class="subtitle">Build • Manage Power • Repair Rides • Upgrade</p>
         <button class="start-btn" id="start-btn">OPEN PARK</button>
     </div>
 
     <!-- Game UI -->
     <div id="ui-layer">
         <div class="top-bar">
-            <div class="stat-box">
-                <span class="stat-label">Bank</span>
-                <span class="stat-value" id="money-display">$1,000</span>
+            <div class="stats-container">
+                <div class="stat-box">
+                    <span class="stat-label">Bank</span>
+                    <span class="stat-value money" id="money-display">$2,000</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Power</span>
+                    <span class="stat-value power" id="power-display">0/0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Visitors</span>
+                    <span class="stat-value" id="visitor-display">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Income</span>
+                    <span class="stat-value" id="income-display">$0/s</span>
+                </div>
             </div>
-            <div class="stat-box">
-                <span class="stat-label">Visitors</span>
-                <span class="stat-value" id="visitor-display">0</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">Income/Sec</span>
-                <span class="stat-value" id="income-display">$0</span>
+            
+            <div class="controls-container">
+                <button class="icon-btn" id="music-btn" title="Toggle Music">🎵</button>
+                <button class="icon-btn" id="pause-btn" title="Pause Game">⏸️</button>
             </div>
         </div>
 
-        <div class="shop-bar" id="shop-container">
-            <!-- Shop items injected by JS -->
+        <div id="context-menu">
+            <h3 id="ctx-name">Ride Name</h3>
+            <div class="ctx-stat"><span>Level:</span> <span id="ctx-level">1</span></div>
+            <div class="ctx-stat"><span>Income:</span> <span id="ctx-income">$10/s</span></div>
+            <div class="ctx-stat"><span>Status:</span> <span id="ctx-status">Running</span></div>
+            <button class="ctx-btn btn-fix" id="ctx-fix-btn" style="display:none;">🔧 Repair ($50)</button>
+            <button class="ctx-btn btn-upgrade" id="ctx-upgrade-btn">⬆️ Upgrade ($100)</button>
+            <button class="ctx-btn btn-delete" id="ctx-delete-btn">🗑️ Demolish</button>
+            <button class="ctx-btn btn-close" id="ctx-close-btn">Close</button>
         </div>
+
+        <div class="shop-bar" id="shop-container"></div>
     </div>
     
     <div id="tooltip"></div>
@@ -226,45 +265,49 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-        // --- Game Config & State ---
+        // --- Configuration & State ---
         const CONFIG = {
-            gridSize: 40,
+            gridSize: 60,
             tileSize: 2,
             colors: {
                 grass: 0x4caf50,
-                grassLight: 0x66bb6a,
-                path: 0x8d6e63,
-                sky: 0x87CEEB
+                path: 0xA0A0A0,
+                highlight: 0xFFFF00
             }
         };
 
         const STATE = {
-            money: 1000,
+            money: 2000,
+            power: { current: 0, max: 0 },
             incomePerSecond: 0,
             visitors: [],
-            buildings: [],
+            buildings: [], // { id, mesh, data, x, z, level, health, broken }
             selectedBlueprint: null,
-            isPlaying: false
+            selectedBuilding: null, // For context menu
+            isPlaying: false,
+            isPaused: false,
+            audioEnabled: true
         };
 
         const BLUEPRINTS = [
-            { id: 'path', name: 'Path', cost: 10, income: 0, icon: '🟫', type: 'path', color: 0x8d6e63 },
-            { id: 'burger', name: 'Burger Stall', cost: 250, income: 15, icon: '🍔', type: 'building', size: 1 },
-            { id: 'icecream', name: 'Ice Cream', cost: 400, income: 25, icon: '🍦', type: 'building', size: 1 },
-            { id: 'teacups', name: 'Tea Cups', cost: 1000, income: 80, icon: '☕', type: 'ride', size: 2 },
-            { id: 'droptower', name: 'Drop Tower', cost: 2500, income: 250, icon: '🗼', type: 'ride', size: 1 },
-            { id: 'ferris', name: 'Voxel Wheel', cost: 5000, income: 600, icon: '🎡', type: 'ride', size: 2 },
+            { id: 'path', name: 'Street', cost: 10, income: 0, power: 0, icon: '🛣️', type: 'path', size: 1 },
+            { id: 'solar', name: 'Solar Panel', cost: 150, income: 0, power: 30, icon: '⚡', type: 'utility', size: 1, desc: 'Generates Power' },
+            { id: 'burger', name: 'Burger Joint', cost: 300, income: 15, power: -5, icon: '🍔', type: 'shop', size: 1 },
+            { id: 'icecream', name: 'Ice Cream', cost: 450, income: 25, power: -5, icon: '🍦', type: 'shop', size: 1 },
+            { id: 'teacups', name: 'Tea Cups', cost: 1200, income: 60, power: -20, icon: '☕', type: 'ride', size: 2 },
+            { id: 'haunted', name: 'Haunted Manor', cost: 3000, income: 150, power: -40, icon: '👻', type: 'ride', size: 2 },
+            { id: 'coaster', name: 'Roller Coaster', cost: 6000, income: 300, power: -100, icon: '🎢', type: 'ride', size: 3 },
+            { id: 'ferris', name: 'Big Wheel', cost: 4500, income: 220, power: -60, icon: '🎡', type: 'ride', size: 2 },
         ];
 
         // --- Three.js Setup ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(CONFIG.colors.sky);
-        scene.fog = new THREE.Fog(CONFIG.colors.sky, 20, 90);
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 30, 120);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(20, 25, 20);
+        camera.position.set(30, 40, 30);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -272,71 +315,332 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        // Controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2 - 0.1; // Don't go below ground
-        controls.minDistance = 10;
-        controls.maxDistance = 60;
+        controls.maxPolarAngle = Math.PI / 2 - 0.1;
+        controls.maxDistance = 100;
         controls.target.set(0, 0, 0);
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
-
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(50, 80, 30);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        dirLight.position.set(50, 100, 50);
         dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 200;
-        dirLight.shadow.camera.left = -50;
-        dirLight.shadow.camera.right = 50;
-        dirLight.shadow.camera.top = 50;
-        dirLight.shadow.camera.bottom = -50;
+        dirLight.shadow.mapSize.set(2048, 2048);
         scene.add(dirLight);
 
-        // --- World Generation ---
+        // --- Game Logic ---
+
+        // Map Helper
+        const occupiedTiles = new Map(); // "x,z" -> buildingObject
+
+        function getGridPos(point) {
+            const x = Math.floor(point.x / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
+            const z = Math.floor(point.z / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
+            return { x, z, key: `${x},${z}` };
+        }
+
+        // --- Building Renderer ---
+        function createBox(color, x, y, z, w, h, d, parent) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            if (parent) parent.add(mesh);
+            return mesh;
+        }
+
+        function createBuildingMesh(id) {
+            const group = new THREE.Group();
+            const anims = [];
+
+            if (id === 'path') {
+                createBox(0x808080, 0, 0.05, 0, CONFIG.tileSize, 0.1, CONFIG.tileSize, group);
+                // Markings
+                createBox(0xffffff, 0, 0.06, 0, 0.2, 0.02, 1, group);
+                createBox(0xffffff, 0, 0.06, 0, 1, 0.02, 0.2, group);
+            } 
+            else if (id === 'solar') {
+                createBox(0x555555, 0, 0.1, 0, 1.5, 0.2, 1.5, group); // Base
+                const panel = createBox(0x3366cc, 0, 0.5, 0, 1.4, 0.1, 1.4, group); // Panel
+                panel.rotation.x = -0.3;
+                createBox(0x222222, 0, 0.5, 0.6, 0.1, 0.8, 0.1, group); // Stand
+            }
+            else if (id === 'burger') {
+                createBox(0xffffff, 0, 1, 0, 1.8, 2, 1.8, group);
+                createBox(0xff0000, 0, 2.1, 0, 2, 0.2, 2, group);
+                // Giant Burger
+                createBox(0xd2691e, 0, 2.5, 0, 1.2, 0.3, 1.2, group); // Bun
+                createBox(0x4caf50, 0, 2.7, 0, 1.3, 0.1, 1.3, group); // Lettuce
+                createBox(0x8b4513, 0, 2.9, 0, 1.2, 0.3, 1.2, group); // Meat
+                createBox(0xd2691e, 0, 3.2, 0, 1.1, 0.3, 1.1, group); // Top Bun
+            }
+            else if (id === 'teacups') {
+                createBox(0x9C27B0, 0, 0.2, 0, 3.5, 0.4, 3.5, group);
+                const spinner = new THREE.Group();
+                spinner.position.y = 0.5;
+                group.add(spinner);
+                
+                [1, -1].forEach(x => {
+                    [1, -1].forEach(z => {
+                        const cup = createBox(0xFF69B4, x, 0.5, z, 0.8, 0.6, 0.8, spinner);
+                    });
+                });
+
+                anims.push((dt, running) => {
+                    if(!running) return;
+                    spinner.rotation.y += 2 * dt;
+                });
+            }
+            else if (id === 'coaster') {
+                // Supports
+                createBox(0xEEEEEE, -2, 2, -2, 0.5, 4, 0.5, group);
+                createBox(0xEEEEEE, 2, 2, 2, 0.5, 4, 0.5, group);
+                createBox(0xEEEEEE, 2, 2, -2, 0.5, 4, 0.5, group);
+                createBox(0xEEEEEE, -2, 2, 2, 0.5, 4, 0.5, group);
+                
+                // Track Loop
+                const track = new THREE.Group();
+                const torusGeo = new THREE.TorusGeometry(2.5, 0.2, 8, 20);
+                const torusMat = new THREE.MeshStandardMaterial({color: 0xff0000});
+                const loop = new THREE.Mesh(torusGeo, torusMat);
+                loop.position.y = 3;
+                loop.rotation.y = Math.PI/4;
+                track.add(loop);
+                group.add(track);
+
+                // Cart
+                const cart = createBox(0xFFFF00, 0, 0, 0, 0.8, 0.5, 1.2, group);
+                let progress = 0;
+                
+                anims.push((dt, running) => {
+                    if(!running) return;
+                    progress += dt * 3;
+                    const angle = progress;
+                    // Simple orbital logic for visual flair (not physics accurate)
+                    cart.position.y = 3 + Math.sin(angle) * 2.5;
+                    cart.position.x = Math.cos(angle) * 2; // Approximate rotation
+                    cart.rotation.z = angle; 
+                });
+            }
+            else if (id === 'haunted') {
+                createBox(0x2d3748, 0, 1.5, 0, 3.5, 3, 3, group); // Main
+                createBox(0x1a202c, -1, 3.5, 0, 1, 2, 1, group); // Tower
+                createBox(0xffff00, -1, 3.8, 0.51, 0.4, 0.4, 0.1, group).material.emissive = new THREE.Color(0xffff00); // Window
+                createBox(0x000000, 0, 1, 1.51, 1, 1.5, 0.1, group); // Door
+                
+                // Ghost particles would be here in a complex version
+            }
+            else if (id === 'ferris') {
+                 createBox(0xFFFFFF, -1, 3, 0, 0.3, 6, 0.3, group);
+                 createBox(0xFFFFFF, 1, 3, 0, 0.3, 6, 0.3, group);
+                 const wheel = new THREE.Group();
+                 wheel.position.y = 5;
+                 group.add(wheel);
+                 
+                 // Hub
+                 createBox(0x333333, 0,0,0, 2.2, 0.2, 0.2, wheel);
+                 
+                 for(let i=0; i<8; i++) {
+                     const arm = new THREE.Group();
+                     arm.rotation.z = (i/8) * Math.PI * 2;
+                     createBox(0xAAAAAA, 1.5, 0, 0, 3, 0.1, 0.1, arm);
+                     
+                     const cabin = createBox(i%2?0xff0000:0x0000ff, 3, 0, 0, 0.8, 0.8, 0.8, arm);
+                     // Counter-rotate cabin in update
+                     arm.userData = { cabin };
+                     wheel.add(arm);
+                 }
+                 
+                 anims.push((dt, running) => {
+                    if(!running) return;
+                    wheel.rotation.z -= dt * 0.5;
+                    wheel.children.forEach(c => {
+                        if(c.userData.cabin) c.userData.cabin.rotation.z += dt * 0.5;
+                    });
+                 });
+            }
+            else {
+                // Default generic
+                createBox(0xFF00FF, 0, 1, 0, 1, 2, 1, group);
+            }
+
+            // Smoke emitter for breakdown (hidden by default)
+            const smokeGroup = new THREE.Group();
+            smokeGroup.visible = false;
+            smokeGroup.position.y = 2;
+            for(let i=0; i<5; i++) {
+                const p = createBox(0x555555, (Math.random()-0.5), i*0.5, (Math.random()-0.5), 0.3, 0.3, 0.3, smokeGroup);
+            }
+            group.add(smokeGroup);
+
+            return { mesh: group, anims, smoke: smokeGroup };
+        }
+
+        // --- Ground & Grid ---
         const groundGroup = new THREE.Group();
-        const gridHelper = new THREE.Group();
-        const occupiedTiles = new Map(); // Key: "x,z", Value: buildingData
+        const planeGeo = new THREE.PlaneGeometry(120, 120);
+        const planeMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.grass });
+        const ground = new THREE.Mesh(planeGeo, planeMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        groundGroup.add(ground);
+        
+        const gridHelper = new THREE.GridHelper(120, 60, 0xffffff, 0xffffff);
+        gridHelper.material.opacity = 0.15;
+        gridHelper.material.transparent = true;
+        gridHelper.position.y = 0.02;
+        scene.add(gridHelper);
+        scene.add(groundGroup);
 
-        function generateGround() {
-            // Main ground plane
-            const geometry = new THREE.PlaneGeometry(100, 100);
-            const material = new THREE.MeshStandardMaterial({ color: CONFIG.colors.grass });
-            const ground = new THREE.Mesh(geometry, material);
-            ground.rotation.x = -Math.PI / 2;
-            ground.receiveShadow = true;
-            groundGroup.add(ground);
+        // --- Visitors ---
+        class Visitor {
+            constructor() {
+                this.mesh = new THREE.Group();
+                const color = new THREE.Color().setHSL(Math.random(), 0.7, 0.5);
+                
+                // Parts
+                const body = createBox(color, 0, 0.7, 0, 0.5, 0.6, 0.3, this.mesh);
+                const head = createBox(0xffccaa, 0, 1.2, 0, 0.3, 0.3, 0.3, this.mesh);
+                this.legL = createBox(0x222222, -0.15, 0.2, 0, 0.15, 0.4, 0.15, this.mesh);
+                this.legR = createBox(0x222222, 0.15, 0.2, 0, 0.15, 0.4, 0.15, this.mesh);
+                
+                // Spawn randomly on edge
+                const edge = Math.floor(Math.random()*4);
+                const offset = (Math.random()-0.5) * 80;
+                if(edge === 0) this.mesh.position.set(offset, 0, 60);
+                if(edge === 1) this.mesh.position.set(offset, 0, -60);
+                if(edge === 2) this.mesh.position.set(60, 0, offset);
+                if(edge === 3) this.mesh.position.set(-60, 0, offset);
 
-            // Visual Grid (Chequerboard subtle)
-            const gridSize = CONFIG.gridSize;
-            const tileSize = CONFIG.tileSize;
-            const gridGeo = new THREE.PlaneGeometry(tileSize - 0.1, tileSize - 0.1);
-            const gridMatA = new THREE.MeshStandardMaterial({ color: CONFIG.colors.grass, transparent: true, opacity: 0.8 });
-            const gridMatB = new THREE.MeshStandardMaterial({ color: CONFIG.colors.grassLight, transparent: true, opacity: 0.8 });
+                this.target = new THREE.Vector3();
+                this.pickTarget();
+                this.speed = 4; // units per sec
+                scene.add(this.mesh);
+            }
 
-            for(let x = -gridSize/2; x < gridSize/2; x++) {
-                for(let z = -gridSize/2; z < gridSize/2; z++) {
-                    // Create an invisible interaction plane for raycasting, but visual logic is handled by main ground
-                    // We just rely on raycasting against the main plane for math
+            pickTarget() {
+                // Prefer buildings
+                if(STATE.buildings.length > 0 && Math.random() > 0.3) {
+                    const b = STATE.buildings[Math.floor(Math.random() * STATE.buildings.length)];
+                    this.target.copy(b.mesh.position);
+                    // Add random offset around building
+                    this.target.x += (Math.random()-0.5) * 4;
+                    this.target.z += (Math.random()-0.5) * 4;
+                } else {
+                    // Random wander
+                    this.target.set((Math.random()-0.5)*80, 0, (Math.random()-0.5)*80);
                 }
             }
-            scene.add(groundGroup);
-            
-            // Grid helper for placement
-            const grid = new THREE.GridHelper(100, 50, 0xffffff, 0xffffff);
-            grid.material.opacity = 0.2;
-            grid.material.transparent = true;
-            grid.position.y = 0.01;
-            scene.add(grid);
-        }
-        generateGround();
 
-        // --- Interaction Logic ---
+            update(dt) {
+                const pos = this.mesh.position;
+                const dir = new THREE.Vector3().subVectors(this.target, pos);
+                const dist = dir.length();
+                
+                if (dist < 1) {
+                    this.pickTarget();
+                    return;
+                }
+                
+                dir.normalize();
+
+                // Path check: Check if current tile is a path
+                const gridPos = getGridPos(pos);
+                const tile = occupiedTiles.get(gridPos.key);
+                const onPath = tile && tile.data.type === 'path';
+                
+                const currentSpeed = onPath ? this.speed * 1.5 : this.speed;
+
+                pos.add(dir.multiplyScalar(currentSpeed * dt));
+                this.mesh.lookAt(this.target);
+
+                // Walk anim
+                const time = Date.now() * 0.01;
+                this.legL.rotation.x = Math.sin(time) * 0.5;
+                this.legR.rotation.x = -Math.sin(time) * 0.5;
+            }
+        }
+
+        // --- Game Actions ---
+
+        function placeBuilding(blueprint, x, z) {
+            const { mesh, anims, smoke } = createBuildingMesh(blueprint.id);
+            mesh.position.set(x, 0, z);
+
+            // Pop in
+            mesh.scale.set(0,0,0);
+            let s = 0;
+            const grow = setInterval(() => { s+=0.1; mesh.scale.set(s,s,s); if(s>=1) clearInterval(grow); }, 20);
+            
+            scene.add(mesh);
+
+            const building = {
+                id: Date.now() + Math.random(),
+                typeId: blueprint.id,
+                data: blueprint,
+                mesh: mesh,
+                anims: anims,
+                smoke: smoke,
+                x: x, 
+                z: z,
+                level: 1,
+                health: 100,
+                broken: false
+            };
+
+            STATE.buildings.push(building);
+            
+            // Occupy tiles
+            const size = blueprint.size;
+            const startX = x - (size-1); 
+            const startZ = z - (size-1); 
+            // Simple center-based occupation logic for simplicity in this version
+            // For 2x2, x is center, so we occupy around it
+            // We'll stick to 1 tile = 1 logic key for collision, but visual size varies
+            // Improved collision:
+            const span = (size * CONFIG.tileSize) / 2 - 0.5; 
+            // Actually, let's just mark the center tile for interaction simplicity
+            // In a full version, we'd mark grid cells.
+            occupiedTiles.set(`${x},${z}`, building);
+
+            playSound('build');
+        }
+
+        function removeBuilding(building) {
+            scene.remove(building.mesh);
+            STATE.buildings = STATE.buildings.filter(b => b !== building);
+            occupiedTiles.forEach((v, k) => { if(v === building) occupiedTiles.delete(k); });
+            playSound('delete');
+        }
+
+        function upgradeBuilding(building) {
+            if(STATE.money >= 100) {
+                STATE.money -= 100;
+                building.level++;
+                updateUI();
+                playSound('upgrade');
+                // Visual pop
+                building.mesh.scale.set(1.2, 1.2, 1.2);
+                setTimeout(() => building.mesh.scale.set(1,1,1), 200);
+            }
+        }
+
+        function fixBuilding(building) {
+            if(STATE.money >= 50) {
+                STATE.money -= 50;
+                building.health = 100;
+                building.broken = false;
+                building.smoke.visible = false;
+                updateUI();
+                playSound('fix');
+            }
+        }
+
+        // --- Input Handling ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const placementPreview = new THREE.Mesh(
@@ -346,301 +650,93 @@
         scene.add(placementPreview);
         placementPreview.visible = false;
 
-        function getGridPos(point) {
-            const x = Math.floor(point.x / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
-            const z = Math.floor(point.z / CONFIG.tileSize) * CONFIG.tileSize + CONFIG.tileSize / 2;
-            return { x, z, key: `${x},${z}` };
-        }
-
-        window.addEventListener('mousemove', (event) => {
-            if (!STATE.isPlaying) return;
-            
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        window.addEventListener('mousemove', (e) => {
+            if(STATE.isPaused) return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(groundGroup.children);
 
-            if (intersects.length > 0 && STATE.selectedBlueprint) {
-                const intersect = intersects[0];
-                const gridPos = getGridPos(intersect.point);
-                
-                placementPreview.visible = true;
-                placementPreview.position.set(gridPos.x, 0.5, gridPos.z);
-                
-                // Adjust size based on blueprint
-                const size = STATE.selectedBlueprint.size || 1;
-                const scale = size * CONFIG.tileSize;
-                const offset = (size - 1) * (CONFIG.tileSize / 2); // Center adjustment for multi-tile
+            if(intersects.length > 0) {
+                const hit = intersects[0].point;
+                const gridPos = getGridPos(hit);
 
-                // Multi-tile logic simplified: Pivot is bottom-left (or center for simplicity)
-                // Let's stick to center pivot, works best for even sizes if we shift
-                if (size === 2) {
-                     placementPreview.position.x += CONFIG.tileSize/2;
-                     placementPreview.position.z += CONFIG.tileSize/2;
+                if(STATE.selectedBlueprint) {
+                    placementPreview.visible = true;
+                    // Logic to center based on size
+                    let px = gridPos.x, pz = gridPos.z;
+                    if(STATE.selectedBlueprint.size % 2 === 0) {
+                        px += CONFIG.tileSize/2;
+                        pz += CONFIG.tileSize/2;
+                    }
+                    
+                    placementPreview.position.set(px, 0.5, pz);
+                    const scale = STATE.selectedBlueprint.size * CONFIG.tileSize;
+                    placementPreview.scale.set(STATE.selectedBlueprint.size, 1, STATE.selectedBlueprint.size); // Relative to box geom
+
+                    const isOccupied = occupiedTiles.has(gridPos.key); // Simple center check
+                    placementPreview.material.color.setHex(isOccupied ? 0xff0000 : 0x00ff00);
+                } else {
+                    placementPreview.visible = false;
                 }
-
-                placementPreview.scale.set(size, 1, size);
-                
-                // Check valid placement (simple collision)
-                // In a full game, we'd check all tiles covered by the building
-                const canBuild = !occupiedTiles.has(gridPos.key); // Simplified: check anchor only
-                placementPreview.material.color.setHex(canBuild ? 0x00ff00 : 0xff0000);
-            } else {
-                placementPreview.visible = false;
             }
         });
 
-        window.addEventListener('pointerdown', (event) => {
-            if (!STATE.isPlaying || event.target.closest('.shop-bar') || event.target.closest('.start-btn')) return;
-            if (event.button !== 0) return; // Left click only
-
+        window.addEventListener('pointerdown', (e) => {
+            if(!STATE.isPlaying || e.target.closest('#ui-layer button') || e.target.closest('.shop-item') || e.target.closest('#context-menu')) return;
+            
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(groundGroup.children);
+            
+            // Check for building clicks first
+            const buildingMeshes = STATE.buildings.map(b => b.mesh);
+            const buildHits = raycaster.intersectObjects(buildingMeshes, true); // Recursive
+            
+            if(buildHits.length > 0 && !STATE.selectedBlueprint) {
+                // Select Building
+                const root = findRoot(buildHits[0].object);
+                const building = STATE.buildings.find(b => b.mesh === root);
+                if(building) openContextMenu(building, e.clientX, e.clientY);
+                return;
+            }
 
-            if (intersects.length > 0 && STATE.selectedBlueprint) {
-                const intersect = intersects[0];
-                const gridPos = getGridPos(intersect.point);
-                
-                // Handle size offsets for 2x2
-                let placeX = gridPos.x;
-                let placeZ = gridPos.z;
-                if(STATE.selectedBlueprint.size === 2) {
-                    placeX += CONFIG.tileSize/2;
-                    placeZ += CONFIG.tileSize/2;
+            // Build Logic
+            const intersects = raycaster.intersectObjects(groundGroup.children);
+            if(intersects.length > 0 && STATE.selectedBlueprint) {
+                const gridPos = getGridPos(intersects[0].point);
+                let px = gridPos.x, pz = gridPos.z;
+                if(STATE.selectedBlueprint.size % 2 === 0) {
+                    px += CONFIG.tileSize/2;
+                    pz += CONFIG.tileSize/2;
                 }
 
-                // Check cost
-                if (STATE.money >= STATE.selectedBlueprint.cost) {
-                     // Check collision (Simple)
-                    if (!occupiedTiles.has(gridPos.key)) {
-                        buildStructure(STATE.selectedBlueprint, placeX, placeZ);
-                        deductMoney(STATE.selectedBlueprint.cost);
-                        addIncome(STATE.selectedBlueprint.income);
-                        playSound('build');
-                        
-                        // Mark tiles as occupied (Simple: just the anchor)
-                        occupiedTiles.set(gridPos.key, true);
+                if(!occupiedTiles.has(gridPos.key)) {
+                    if(STATE.money >= STATE.selectedBlueprint.cost) {
+                        STATE.money -= STATE.selectedBlueprint.cost;
+                        placeBuilding(STATE.selectedBlueprint, px, pz);
+                        updateUI();
                     } else {
                         playSound('error');
                     }
                 } else {
                     playSound('error');
-                    showTooltip("Not enough money!", event.clientX, event.clientY);
                 }
+            } else {
+                closeContextMenu();
             }
         });
 
-        // --- Building Generation ---
-        function createVoxelMesh(color, x, y, z, w, h, d) {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mat = new THREE.MeshStandardMaterial({ color: color });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(x, y, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            return mesh;
+        function findRoot(obj) {
+            if(obj.parent && obj.parent.type === 'Group' && obj.parent.parent && obj.parent.parent.type === 'Scene') return obj.parent;
+            if(obj.parent && obj.parent.type !== 'Scene') return findRoot(obj.parent);
+            return obj;
         }
 
-        function buildStructure(blueprint, x, z) {
-            const group = new THREE.Group();
-            group.position.set(x, 0, z);
-
-            let animationUpdate = null;
-
-            if (blueprint.id === 'path') {
-                const mesh = createVoxelMesh(0x8d6e63, 0, 0.05, 0, CONFIG.tileSize, 0.1, CONFIG.tileSize);
-                group.add(mesh);
-            } 
-            else if (blueprint.id === 'burger') {
-                // Base
-                group.add(createVoxelMesh(0xFFFFFF, 0, 1, 0, 1.8, 2, 1.8));
-                // Roof
-                group.add(createVoxelMesh(0xff0000, 0, 2.2, 0, 2.2, 0.4, 2.2));
-                // Burger Icon (abstract)
-                group.add(createVoxelMesh(0xD2691E, 0, 2.8, 0, 1, 0.5, 1)); // Bun
-                group.add(createVoxelMesh(0x00FF00, 0, 2.85, 0, 1.1, 0.1, 1.1)); // Lettuce
-            }
-            else if (blueprint.id === 'icecream') {
-                group.add(createVoxelMesh(0xEEE8AA, 0, 1, 0, 1.8, 2, 1.8));
-                group.add(createVoxelMesh(0x2196F3, 0, 2.2, 0, 2.2, 0.4, 2.2));
-                // Cone
-                group.add(createVoxelMesh(0xFFFFFF, 0, 3, 0, 0.8, 1.5, 0.8));
-            }
-            else if (blueprint.id === 'droptower') {
-                // Tower
-                group.add(createVoxelMesh(0x555555, 0, 6, 0, 0.5, 12, 0.5));
-                // Car
-                const car = createVoxelMesh(0xFFA500, 0, 1, 0, 1.5, 1, 1.5);
-                group.add(car);
-                
-                // Anim Logic
-                let speed = 0.1;
-                let goingUp = true;
-                animationUpdate = () => {
-                    if(goingUp) {
-                        car.position.y += 0.05;
-                        if(car.position.y > 10) goingUp = false;
-                    } else {
-                        car.position.y -= 0.3; // Drop fast
-                        if(car.position.y < 1) goingUp = true;
-                    }
-                };
-            }
-            else if (blueprint.id === 'teacups') {
-                const base = createVoxelMesh(0x9C27B0, 0, 0.2, 0, 3.5, 0.4, 3.5);
-                group.add(base);
-                
-                const spinner = new THREE.Group();
-                // Cups
-                const cupGeo = new THREE.CylinderGeometry(0.4, 0.3, 0.6, 8);
-                const cupMat = new THREE.MeshStandardMaterial({color: 0xE1BEE7});
-                
-                const positions = [[1,0,1], [-1,0,1], [1,0,-1], [-1,0,-1]];
-                positions.forEach(pos => {
-                    const cup = new THREE.Mesh(cupGeo, cupMat);
-                    cup.position.set(pos[0], 0.8, pos[2]);
-                    cup.castShadow = true;
-                    spinner.add(cup);
-                });
-                group.add(spinner);
-
-                animationUpdate = () => {
-                    spinner.rotation.y += 0.03;
-                    spinner.children.forEach(c => c.rotation.y -= 0.05);
-                };
-            }
-            else if (blueprint.id === 'ferris') {
-                // Legs
-                group.add(createVoxelMesh(0xFFFFFF, -1.5, 2.5, 0, 0.2, 5, 0.2));
-                group.add(createVoxelMesh(0xFFFFFF, 1.5, 2.5, 0, 0.2, 5, 0.2));
-                
-                // Wheel
-                const wheel = new THREE.Group();
-                wheel.position.set(0, 4.5, 0);
-                
-                // Rim
-                const rimPoints = 8;
-                for(let i=0; i<rimPoints; i++) {
-                    const angle = (i / rimPoints) * Math.PI * 2;
-                    const wx = Math.cos(angle) * 2;
-                    const wy = Math.sin(angle) * 2;
-                    
-                    // Spoke
-                    const spoke = createVoxelMesh(0x888888, wx/2, wy/2, 0, Math.abs(wx)||0.2, Math.abs(wy)||0.2, 0.1);
-                    wheel.add(spoke);
-                    
-                    // Cabin
-                    const cabin = createVoxelMesh(i%2===0?0xFF0000:0xFFFF00, wx, wy, 0, 0.8, 0.8, 1);
-                    wheel.add(cabin);
-                }
-                group.add(wheel);
-                
-                animationUpdate = () => {
-                    wheel.rotation.z -= 0.01;
-                    // Counter rotate cabins to keep them upright (simple visual trick)
-                    wheel.children.forEach(child => {
-                        // Assuming children after index 7 are cabins? 
-                        // Simplified: just rotate everything, cabins spin too, funny physics
-                        child.rotation.z += 0.01; 
-                    });
-                };
-            }
-
-            // Pop in effect
-            group.scale.set(0,0,0);
-            let s = 0;
-            const popIn = setInterval(() => {
-                s += 0.2;
-                group.scale.set(s,s,s);
-                if(s >= 1) {
-                    group.scale.set(1,1,1);
-                    clearInterval(popIn);
-                }
-            }, 30);
-
-            scene.add(group);
-            
-            STATE.buildings.push({
-                mesh: group,
-                update: animationUpdate
-            });
-        }
-
-        // --- Visitor System (Peeps) ---
-        class Visitor {
-            constructor() {
-                this.mesh = new THREE.Group();
-                
-                // Minecraft/Roblox style body
-                const color = Math.random() * 0xffffff;
-                const legL = createVoxelMesh(0x333333, -0.15, 0.3, 0, 0.2, 0.6, 0.2);
-                const legR = createVoxelMesh(0x333333, 0.15, 0.3, 0, 0.2, 0.6, 0.2);
-                const body = createVoxelMesh(color, 0, 0.9, 0, 0.6, 0.6, 0.3);
-                const head = createVoxelMesh(0xffccaa, 0, 1.4, 0, 0.3, 0.3, 0.3);
-
-                this.mesh.add(legL, legR, body, head);
-                this.mesh.position.set(0, 0, 45); // Start at edge
-                
-                this.target = new THREE.Vector3(
-                    (Math.random() - 0.5) * CONFIG.gridSize, 
-                    0, 
-                    (Math.random() - 0.5) * CONFIG.gridSize
-                );
-                
-                this.speed = 0.05 + Math.random() * 0.05;
-                this.walkTick = 0;
-
-                this.legs = [legL, legR];
-                
-                scene.add(this.mesh);
-                STATE.visitors.push(this);
-            }
-
-            update() {
-                // Move
-                const dir = new THREE.Vector3().subVectors(this.target, this.mesh.position);
-                dir.y = 0;
-                if (dir.length() < 1) {
-                    // Pick new target
-                    this.target.set(
-                        (Math.random() - 0.5) * 30, // Stay somewhat central
-                        0,
-                        (Math.random() - 0.5) * 30
-                    );
-                } else {
-                    dir.normalize();
-                    this.mesh.position.add(dir.multiplyScalar(this.speed));
-                    this.mesh.lookAt(this.target);
-                }
-
-                // Animate Legs
-                this.walkTick += 0.2;
-                this.legs[0].rotation.x = Math.sin(this.walkTick) * 0.5;
-                this.legs[1].rotation.x = -Math.sin(this.walkTick) * 0.5;
-            }
-        }
-
-        function spawner() {
-            if(!STATE.isPlaying) return;
-            // Spawn visitor if we have attractions
-            if (STATE.buildings.length > 0 && STATE.visitors.length < STATE.buildings.length * 5) {
-                new Visitor();
-            }
-        }
-        setInterval(spawner, 2000);
-
-        // --- Economy & UI ---
-        function updateUI() {
-            document.getElementById('money-display').textContent = `$${Math.floor(STATE.money).toLocaleString()}`;
-            document.getElementById('income-display').textContent = `$${STATE.incomePerSecond}/s`;
-            document.getElementById('visitor-display').textContent = STATE.visitors.length;
-        }
+        // --- UI Logic ---
 
         function renderShop() {
             const container = document.getElementById('shop-container');
             container.innerHTML = '';
-            
             BLUEPRINTS.forEach(bp => {
                 const div = document.createElement('div');
                 div.className = 'shop-item';
@@ -648,124 +744,233 @@
                     <div class="shop-item-icon">${bp.icon}</div>
                     <div class="shop-item-name">${bp.name}</div>
                     <div class="shop-item-cost">$${bp.cost}</div>
+                    ${bp.power !== 0 ? `<div class="shop-item-power">${bp.power > 0 ? '+' : ''}${bp.power}⚡</div>` : ''}
                 `;
-                
-                div.onclick = () => {
-                    // Deselect previous
-                    document.querySelectorAll('.shop-item').forEach(el => el.classList.remove('active'));
-                    
-                    if (STATE.selectedBlueprint === bp) {
-                        STATE.selectedBlueprint = null; // Toggle off
+                div.onclick = (e) => {
+                    e.stopPropagation();
+                    closeContextMenu();
+                    if(STATE.selectedBlueprint === bp) {
+                        STATE.selectedBlueprint = null;
+                        div.classList.remove('active');
                     } else {
+                        document.querySelectorAll('.shop-item').forEach(el => el.classList.remove('active'));
                         STATE.selectedBlueprint = bp;
                         div.classList.add('active');
                         playSound('click');
                     }
                 };
-                
                 container.appendChild(div);
             });
         }
 
-        function deductMoney(amount) {
-            STATE.money -= amount;
-            updateUI();
-        }
-
-        function addIncome(amount) {
-            STATE.incomePerSecond += amount;
-            updateUI();
-        }
-
-        function showTooltip(text, x, y) {
-            const el = document.getElementById('tooltip');
-            el.textContent = text;
-            el.style.display = 'block';
-            el.style.left = x + 'px';
-            el.style.top = (y - 40) + 'px';
-            setTimeout(() => { el.style.display = 'none'; }, 1000);
-        }
-
-        // Game Loop - Economy
-        setInterval(() => {
-            if (!STATE.isPlaying) return;
-            if (STATE.incomePerSecond > 0) {
-                STATE.money += STATE.incomePerSecond;
-                updateUI();
-                if(STATE.incomePerSecond > 100) playSound('coin'); // Auditory feedback occasionally
+        function openContextMenu(building, x, y) {
+            STATE.selectedBuilding = building;
+            const menu = document.getElementById('context-menu');
+            menu.style.display = 'flex';
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+            
+            document.getElementById('ctx-name').innerText = building.data.name;
+            document.getElementById('ctx-level').innerText = building.level;
+            
+            // Calculate effective income
+            const inc = Math.floor(building.data.income * (1 + (building.level-1)*0.5));
+            document.getElementById('ctx-income').innerText = `$${inc}/s`;
+            
+            const statusEl = document.getElementById('ctx-status');
+            const fixBtn = document.getElementById('ctx-fix-btn');
+            
+            if(building.broken) {
+                statusEl.innerText = "BROKEN";
+                statusEl.style.color = "red";
+                fixBtn.style.display = 'block';
+            } else {
+                statusEl.innerText = "Running";
+                statusEl.style.color = "green";
+                fixBtn.style.display = 'none';
             }
-        }, 1000);
+        }
 
-        // --- Audio (Tone.js) ---
-        // Setup simple synths
-        let synth, coinSynth;
+        function closeContextMenu() {
+            document.getElementById('context-menu').style.display = 'none';
+            STATE.selectedBuilding = null;
+        }
+
+        document.getElementById('ctx-close-btn').onclick = closeContextMenu;
+        document.getElementById('ctx-delete-btn').onclick = () => {
+            if(STATE.selectedBuilding) removeBuilding(STATE.selectedBuilding);
+            closeContextMenu();
+        };
+        document.getElementById('ctx-upgrade-btn').onclick = () => {
+            if(STATE.selectedBuilding) {
+                upgradeBuilding(STATE.selectedBuilding);
+                openContextMenu(STATE.selectedBuilding, parseInt(document.getElementById('context-menu').style.left), parseInt(document.getElementById('context-menu').style.top)); // Refresh
+            }
+        };
+        document.getElementById('ctx-fix-btn').onclick = () => {
+            if(STATE.selectedBuilding) {
+                fixBuilding(STATE.selectedBuilding);
+                openContextMenu(STATE.selectedBuilding, parseInt(document.getElementById('context-menu').style.left), parseInt(document.getElementById('context-menu').style.top));
+            }
+        };
+
+        document.getElementById('pause-btn').onclick = () => {
+            STATE.isPaused = !STATE.isPaused;
+            document.getElementById('pause-btn').innerText = STATE.isPaused ? "▶️" : "⏸️";
+        };
+
+        // --- Audio System ---
+        let synth, polySynth, noise;
+        let musicLoop;
 
         async function initAudio() {
             await Tone.start();
-            synth = new Tone.PolySynth(Tone.Synth).toDestination();
-            synth.volume.value = -10;
             
-            coinSynth = new Tone.MembraneSynth().toDestination();
-            coinSynth.volume.value = -15;
+            // SFX Synth
+            synth = new Tone.Synth().toDestination();
+            
+            // Music Synth
+            polySynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 1 }
+            }).toDestination();
+            polySynth.volume.value = -12;
 
-            // Background ambient
-            const filter = new Tone.AutoFilter(0.1).toDestination().start();
-            const noise = new Tone.Noise("pink").connect(filter).start();
-            noise.volume.value = -30;
+            // Start Music Loop
+            const notes = ["C4", "E4", "G4", "B4", "C5", "G4", "E4", "C4"];
+            let idx = 0;
+            musicLoop = setInterval(() => {
+                if(!STATE.isPlaying || STATE.isPaused || !STATE.audioEnabled) return;
+                // Simple Arpeggio
+                const note = notes[idx % notes.length];
+                const note2 = notes[(idx + 2) % notes.length];
+                polySynth.triggerAttackRelease([note, note2], "8n");
+                idx++;
+            }, 300);
         }
 
         function playSound(type) {
-            if (!STATE.isPlaying) return;
-            if (type === 'build') synth.triggerAttackRelease(["C5", "E5"], "8n");
-            if (type === 'click') synth.triggerAttackRelease("C6", "32n");
-            if (type === 'error') synth.triggerAttackRelease(["C3", "C2"], "16n");
-            if (type === 'coin') coinSynth.triggerAttackRelease("C6", "16n");
+            if(!STATE.audioEnabled) return;
+            try {
+                if(type === 'click') synth.triggerAttackRelease("G5", "32n");
+                if(type === 'build') synth.triggerAttackRelease("C6", "16n");
+                if(type === 'error') synth.triggerAttackRelease("A3", "8n");
+                if(type === 'delete') synth.triggerAttackRelease("G2", "8n");
+                if(type === 'upgrade') synth.triggerAttackRelease("C5", "8n");
+                if(type === 'fix') synth.triggerAttackRelease("F5", "8n");
+            } catch(e) {}
         }
 
-        // --- Core Loop ---
+        document.getElementById('music-btn').onclick = () => {
+            STATE.audioEnabled = !STATE.audioEnabled;
+            document.getElementById('music-btn').classList.toggle('active', STATE.audioEnabled);
+        };
+
+        // --- Main Loop & Economy ---
+
+        function updateEconomy() {
+            let totalIncome = 0;
+            let totalPowerGen = 0;
+            let totalPowerUse = 0;
+
+            STATE.buildings.forEach(b => {
+                if(b.data.power > 0) totalPowerGen += b.data.power;
+                else totalPowerUse += Math.abs(b.data.power);
+            });
+
+            const powerAvailable = totalPowerGen >= totalPowerUse;
+            
+            STATE.buildings.forEach(b => {
+                if(b.data.type === 'ride' || b.data.type === 'shop') {
+                    // Breakdown Chance (1% every sec)
+                    if(!b.broken && Math.random() < 0.005) {
+                        b.broken = true;
+                        b.smoke.visible = true;
+                        playSound('error');
+                    }
+
+                    // Income calculation
+                    if(!b.broken && powerAvailable) {
+                        // Level multiplier
+                        totalIncome += b.data.income * (1 + (b.level-1)*0.5);
+                    }
+                }
+            });
+
+            STATE.money += totalIncome;
+            STATE.incomePerSecond = totalIncome;
+            STATE.power.current = totalPowerUse;
+            STATE.power.max = totalPowerGen;
+
+            updateUI();
+        }
+
+        function updateUI() {
+            const m = document.getElementById('money-display');
+            m.innerText = `$${Math.floor(STATE.money).toLocaleString()}`;
+            
+            const p = document.getElementById('power-display');
+            p.innerText = `${STATE.power.current}/${STATE.power.max}`;
+            p.className = (STATE.power.current > STATE.power.max) ? "stat-value danger" : "stat-value power";
+
+            document.getElementById('income-display').innerText = `$${Math.floor(STATE.incomePerSecond)}/s`;
+            document.getElementById('visitor-display').innerText = STATE.visitors.length;
+        }
+
+        // Loop Config
+        const clock = new THREE.Clock();
+        let ecoTimer = 0;
+
         function animate() {
             requestAnimationFrame(animate);
 
-            if (STATE.isPlaying) {
-                // Update buildings
+            const dt = clock.getDelta();
+
+            if(STATE.isPlaying && !STATE.isPaused) {
+                // Eco Tick (1 second)
+                ecoTimer += dt;
+                if(ecoTimer > 1) {
+                    updateEconomy();
+                    ecoTimer = 0;
+                }
+
+                // Buildings
+                const hasPower = STATE.power.max >= STATE.power.current;
                 STATE.buildings.forEach(b => {
-                    if (b.update) b.update();
+                    if(b.anims && b.anims.length) {
+                        // Only animate if running
+                        const running = !b.broken && hasPower;
+                        b.anims.forEach(anim => anim(dt, running));
+                    }
                 });
 
-                // Update visitors
-                STATE.visitors.forEach(v => v.update());
+                // Visitors
+                STATE.visitors.forEach(v => v.update(dt));
+
+                // Spawner
+                if(STATE.visitors.length < STATE.buildings.length * 3 + 5) {
+                    if(Math.random() < 0.02) new Visitor(); // 2% chance per frame roughly
+                }
             }
 
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // --- Initialization ---
-        document.getElementById('start-btn').addEventListener('click', async () => {
+        // Init
+        document.getElementById('start-btn').onclick = async () => {
             document.getElementById('start-overlay').style.display = 'none';
             await initAudio();
             STATE.isPlaying = true;
             renderShop();
-            updateUI();
-            
-            // Initial Camera Swing
-            const startPos = {x: 60, z: 60};
-            let swing = 0;
-            const intro = setInterval(() => {
-                swing += 0.05;
-                camera.position.x = 20 + Math.sin(swing) * 2;
-                if(swing > Math.PI) clearInterval(intro);
-            }, 16);
-        });
+            animate();
+        };
 
-        // Resize handler
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        animate();
 
     </script>
 </body>
